@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   COLOUR WAYS — swap these values to re-skin the entire interface.
+   COLOUR WAYS — "Jungle Lore". Swap these to re-skin the entire interface.
    Substrate: Tactical Telemetry (dark). Do not mix in a light substrate.
    ========================================================================== */
 :root {
-  --substrate: #0a0a0a; /* deactivated CRT — never pure black */
-  --panel: #121212; /* raised compartment */
-  --phosphor: #eaeaea; /* primary text */
-  --phosphor-dim: #6f6f6f; /* metadata, timestamps, unit ids */
-  --hazard: #e61919; /* THE accent — alerts, rules, agent marker */
-  --terminal-green: #4af626; /* reserved: live status indicator ONLY */
+  --substrate: #1e2a0d; /* deep jungle — dark, never pure black */
+  --panel: #2a3a12; /* raised compartment — derived lift off substrate */
+  --rule-color: #4d5a1b; /* olive — structural hairlines and compartments */
+  --phosphor: #fef1c6; /* cream — primary text */
+  --phosphor-dim: #cdc696; /* khaki — metadata, unit ids, coordinates */
+  --hazard: #a14345; /* brick — THE accent: alerts, agent marker, send */
+  --signal: #d78b33; /* ochre — reserved: live status indicator ONLY */
 
-  --rule: 1px solid var(--phosphor-dim);
+  --rule: 1px solid var(--rule-color);
   --rule-heavy: 2px solid var(--phosphor);
 }
 
@@ -110,12 +111,12 @@ body::after {
   gap: 1rem;
 }
 
-/* Terminal green earns its single use here: the live-status indicator. */
+/* Ochre earns its single use here: the live-status indicator. */
 .status-live {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  color: var(--terminal-green);
+  color: var(--signal);
 }
 
 .status-dot {
@@ -141,7 +142,7 @@ body::after {
   flex-direction: column;
   gap: 1.25rem;
   scrollbar-width: thin;
-  scrollbar-color: var(--phosphor-dim) transparent;
+  scrollbar-color: var(--rule-color) transparent;
 }
 
 .msg {
@@ -180,10 +181,11 @@ body::after {
   border-color: var(--phosphor);
 }
 
+/* Brick-on-substrate is too low-contrast to read as text, so faults invert. */
 .msg-error .msg-body {
   border-color: var(--hazard);
-  color: var(--hazard);
-  background: var(--substrate);
+  color: var(--phosphor);
+  background: var(--hazard);
 }
 
 /* --------------------------------------------------------------------------
@@ -253,7 +255,7 @@ body::after {
 .email-rows {
   display: grid;
   gap: 1px;
-  background: var(--phosphor-dim); /* grid gap renders the hairline rules */
+  background: var(--rule-color); /* grid gap renders the hairline rules */
   border-top: var(--rule);
 }
 

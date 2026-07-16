@@ -14,6 +14,7 @@ export type IconName =
   | "digital"
   | "leads"
   | "gigs"
+  | "abandonment"
   | "comms"
   | "forecast"
   | "analytics"
@@ -23,7 +24,13 @@ export type IconName =
   | "premium"
   | "other";
 
-export type ProblemId = "leads" | "gigs" | "comms" | "forecast" | "analytics";
+export type ProblemId =
+  | "leads"
+  | "gigs"
+  | "abandonment"
+  | "comms"
+  | "forecast"
+  | "analytics";
 export type QuestionId = "field" | "problems" | "product";
 
 export interface Option {
@@ -81,7 +88,14 @@ export const AUTOMATIONS: Automation[] = [
     // gigs is deliberately level with Concierge: "not enough work" is fixed by
     // recovering lost checkouts in a shop but by converting enquiries in a
     // service business, so FIELD_BONUS decides rather than this table.
-    weights: { leads: 3, gigs: 2, comms: 1, forecast: 0, analytics: 0 },
+    weights: {
+      leads: 3,
+      gigs: 2,
+      abandonment: 3,
+      comms: 1,
+      forecast: 0,
+      analytics: 0,
+    },
   },
   {
     id: "concierge",
@@ -89,7 +103,14 @@ export const AUTOMATIONS: Automation[] = [
     name: "Client Concierge",
     blurb:
       "Answers customer questions, chases replies, and keeps every conversation moving without anyone on your side typing.",
-    weights: { leads: 1, gigs: 2, comms: 3, forecast: 0, analytics: 1 },
+    weights: {
+      leads: 1,
+      gigs: 2,
+      abandonment: 1,
+      comms: 3,
+      forecast: 0,
+      analytics: 1,
+    },
   },
   {
     id: "forecast",
@@ -97,7 +118,14 @@ export const AUTOMATIONS: Automation[] = [
     name: "Forecast Desk",
     blurb:
       "Projects next month's sales from your own history and reports what moved, what stalled, and what to do about it.",
-    weights: { leads: 0, gigs: 0, comms: 0, forecast: 3, analytics: 3 },
+    weights: {
+      leads: 0,
+      gigs: 0,
+      abandonment: 0,
+      comms: 0,
+      forecast: 3,
+      analytics: 3,
+    },
   },
 ];
 
@@ -176,6 +204,12 @@ export const QUESTIONS: Question[] = [
         label: "Too few gigs",
         note: "Not enough work coming in at all",
         icon: "gigs",
+      },
+      {
+        id: "abandonment",
+        label: "Cart abandonment",
+        note: "They reach checkout, then vanish",
+        icon: "abandonment",
       },
       {
         id: "comms",

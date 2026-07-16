@@ -57,6 +57,17 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M3 4h18l-7 8v9l-4-3v-6L3 4Z" />
     </>
   ),
+  // A cart, and the customer leaving it
+  abandonment: (
+    <>
+      <path d="M2 4h2.5l2.5 9h8.5" />
+      <path d="M6 7h9l-1 4H7" />
+      <rect x="7" y="15.5" width="2.5" height="2.5" />
+      <rect x="13" y="15.5" width="2.5" height="2.5" />
+      <path d="M17 9l5-5" />
+      <path d="M18 4h4v4" />
+    </>
+  ),
   // A schedule with most of its slots empty
   gigs: (
     <>

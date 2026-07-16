@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   COLOUR WAYS — "Jungle Lore". Swap these to re-skin the entire interface.
-   Substrate: Tactical Telemetry (dark). Do not mix in a light substrate.
+   COLOUR WAYS — "Jungle Lore" on Swiss Industrial Print (light).
+   Substrate is unbleached paper, never pure white. Do not mix in a dark
+   substrate — the archetype is committed.
    ========================================================================== */
 :root {
-  --substrate: #1e2a0d; /* deep jungle — dark, never pure black */
-  --panel: #2a3a12; /* raised compartment — derived lift off substrate */
-  --rule-color: #4d5a1b; /* olive — structural hairlines and compartments */
-  --phosphor: #fef1c6; /* cream — primary text */
-  --phosphor-dim: #cdc696; /* khaki — metadata, unit ids, coordinates */
-  --hazard: #a14345; /* brick — THE accent: alerts, agent marker, send */
-  --signal: #d78b33; /* ochre — reserved: live status indicator ONLY */
+  --paper: #fef1c6; /* unbleached documentation stock — the substrate */
+  --tint: #cdc696; /* khaki — secondary compartment fill */
+  --rule-color: #4d5a1b; /* olive — hairlines, dividers, metadata ink */
+  --ink: #1e2a0d; /* carbon — primary text and label bars */
+  --accent: #d78b33; /* ochre — THE accent: agent marker, send, email stub */
+  --signal: #a14345; /* brick — reserved: live status indicator ONLY */
 
   --rule: 1px solid var(--rule-color);
-  --rule-heavy: 2px solid var(--phosphor);
+  --rule-heavy: 2px solid var(--ink);
 }
 
 @theme inline {
-  --color-background: var(--substrate);
-  --color-foreground: var(--phosphor);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
   --font-sans: var(--font-archivo-black);
   --font-mono: var(--font-jetbrains-mono);
 }
@@ -31,45 +31,80 @@
 
 html,
 body {
-  background: var(--substrate);
-  color: var(--phosphor);
+  background: var(--tint); /* stock sits on a darker board, as in the reference */
+  color: var(--ink);
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   -webkit-font-smoothing: antialiased;
 }
 
-/* CRT scanline sweep, applied globally above the DOM. */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.28) 2px,
-    rgba(0, 0, 0, 0.28) 4px
-  );
-}
-
 /* --------------------------------------------------------------------------
-   MICRO-TYPOGRAPHY — metadata, unit ids, coordinates
+   MICRO-TYPOGRAPHY — labels, unit ids, coordinates
    -------------------------------------------------------------------------- */
-.telemetry {
-  font-size: 0.625rem;
-  letter-spacing: 0.1em;
+.label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--phosphor-dim);
+  color: var(--rule-color);
   line-height: 1.2;
 }
 
-.telemetry-hazard {
-  color: var(--hazard);
+.label-ink {
+  color: var(--ink);
+}
+
+/* Oversized data value, per the reference's gate/seat numerals. */
+.datum {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--ink);
 }
 
 /* --------------------------------------------------------------------------
-   SHELL — the handset. Mobile-first: full bleed, framed at >=480px.
+   INDUSTRIAL MARKERS — vertical label bar, barcode, dot matrix
+   -------------------------------------------------------------------------- */
+.stub {
+  background: var(--ink);
+  color: var(--paper);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: grid;
+  place-items: center;
+  padding: 0.75rem 0.3125rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stub-accent {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.barcode {
+  height: 1.75rem;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 1px,
+    transparent 1px 3px,
+    var(--ink) 3px 5px,
+    transparent 5px 6px,
+    var(--ink) 6px 7px,
+    transparent 7px 10px
+  );
+}
+
+.dots {
+  height: 0.75rem;
+  background-image: radial-gradient(var(--rule-color) 1px, transparent 1px);
+  background-size: 5px 5px;
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------------------------
+   SHELL — the handset, presented as a ticket
    -------------------------------------------------------------------------- */
 .shell {
   display: grid;
@@ -78,45 +113,69 @@ body::after {
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  border-left: var(--rule);
-  border-right: var(--rule);
-  background: var(--substrate);
+  background: var(--paper);
+  border-left: var(--rule-heavy);
+  border-right: var(--rule-heavy);
   overflow: hidden;
 }
 
 /* --------------------------------------------------------------------------
-   HEADER
+   HEADER — boarding-pass masthead
    -------------------------------------------------------------------------- */
 .header {
+  display: grid;
+  grid-template-columns: auto 1fr;
   border-bottom: var(--rule-heavy);
-  padding: 0.75rem 1rem;
+  background: var(--paper);
+}
+
+.header-body {
   display: grid;
   gap: 0.5rem;
-  background: var(--substrate);
+  padding: 0.75rem 0.875rem;
+  min-width: 0;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .header-title {
   font-family: var(--font-archivo-black), system-ui, sans-serif;
-  font-size: clamp(1.5rem, 7vw, 2.25rem);
-  letter-spacing: -0.04em;
-  line-height: 0.9;
+  font-size: clamp(1.75rem, 9vw, 2.75rem);
+  letter-spacing: -0.05em;
+  line-height: 0.85;
   text-transform: uppercase;
   margin: 0;
 }
 
-.header-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
+/* Two data cells divided by a hairline, as on the pass. */
+.header-data {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule-color);
+  border-top: var(--rule);
 }
 
-/* Ochre earns its single use here: the live-status indicator. */
+.header-cell {
+  background: var(--paper);
+  padding: 0.4375rem 0.5rem 0.3125rem;
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+
+/* Brick earns its single use here: the live indicator. */
 .status-live {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   color: var(--signal);
+  flex: none;
 }
 
 .status-dot {
@@ -128,7 +187,7 @@ body::after {
 
 @keyframes pulse {
   50% {
-    opacity: 0.2;
+    opacity: 0.15;
   }
 }
 
@@ -137,10 +196,10 @@ body::after {
    -------------------------------------------------------------------------- */
 .transcript {
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1rem 0.875rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.125rem;
   scrollbar-width: thin;
   scrollbar-color: var(--rule-color) transparent;
 }
@@ -148,44 +207,51 @@ body::after {
 .msg {
   display: grid;
   gap: 0.3125rem;
-  max-width: 85%;
+  max-width: 86%;
 }
 
 .msg-user {
   justify-self: end;
-  text-align: right;
 }
 
 .msg-agent {
   justify-self: start;
 }
 
+.msg-head {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.msg-user .msg-head {
+  justify-content: flex-end;
+}
+
 .msg-body {
   border: var(--rule);
+  border-left: 3px solid var(--accent);
   padding: 0.625rem 0.75rem;
   font-size: 0.8125rem;
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  background: var(--panel);
+  background: var(--paper);
 }
 
-/* The agent is the system speaking: hazard-red left rule marks it. */
-.msg-agent .msg-body {
-  border-left: 3px solid var(--hazard);
-}
-
+/* The customer's own turns are struck as carbon label blocks. */
 .msg-user .msg-body {
-  background: var(--phosphor);
-  color: var(--substrate);
-  border-color: var(--phosphor);
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  border-left-color: var(--ink);
 }
 
-/* Brick-on-substrate is too low-contrast to read as text, so faults invert. */
 .msg-error .msg-body {
-  border-color: var(--hazard);
-  color: var(--phosphor);
-  background: var(--hazard);
+  border-color: var(--signal);
+  border-left-color: var(--signal);
+  background: var(--signal);
+  color: var(--paper);
 }
 
 /* --------------------------------------------------------------------------
@@ -195,16 +261,17 @@ body::after {
   display: inline-flex;
   gap: 0.25rem;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.6875rem 0.75rem;
   border: var(--rule);
-  border-left: 3px solid var(--hazard);
-  background: var(--panel);
+  border-left: 3px solid var(--accent);
+  background: var(--paper);
+  width: fit-content;
 }
 
 .typing-block {
   width: 7px;
   height: 12px;
-  background: var(--hazard);
+  background: var(--accent);
   animation: blocks 1.05s steps(2, end) infinite;
 }
 
@@ -222,14 +289,14 @@ body::after {
 }
 
 /* --------------------------------------------------------------------------
-   EMAIL PREVIEW — the "email sent →" panel
+   EMAIL PREVIEW — rendered as a detachable ticket stub
    -------------------------------------------------------------------------- */
 .email-panel {
-  border: var(--rule);
-  border-left: 3px solid var(--hazard);
-  background: var(--panel);
   display: grid;
-  animation: boot 220ms steps(4, end);
+  grid-template-columns: auto 1fr;
+  border: var(--rule-heavy);
+  background: var(--paper);
+  animation: boot 200ms steps(3, end);
 }
 
 @keyframes boot {
@@ -239,41 +306,47 @@ body::after {
   }
 }
 
-.email-bar {
-  background: var(--hazard);
-  color: var(--phosphor);
-  padding: 0.25rem 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
+.email-main {
+  display: grid;
+  min-width: 0;
 }
 
-.email-bar .telemetry {
-  color: inherit;
+.email-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: var(--rule);
 }
 
 .email-rows {
   display: grid;
   gap: 1px;
   background: var(--rule-color); /* grid gap renders the hairline rules */
-  border-top: var(--rule);
 }
 
 .email-row {
-  background: var(--panel);
-  padding: 0.5rem;
+  background: var(--paper);
+  padding: 0.4375rem 0.5rem;
   display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  gap: 0.5rem;
-  align-items: baseline;
+  gap: 0.1875rem;
+  min-width: 0;
 }
 
 .email-value {
   font-size: 0.75rem;
   line-height: 1.45;
-  color: var(--phosphor);
+  color: var(--ink);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.email-foot {
+  border-top: var(--rule);
+  padding: 0.375rem 0.5rem;
+  display: grid;
+  gap: 0.25rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -283,55 +356,58 @@ body::after {
   border-top: var(--rule-heavy);
   display: grid;
   grid-template-columns: 1fr auto;
-  background: var(--substrate);
+  background: var(--paper);
 }
 
 .composer-input {
   background: transparent;
   border: 0;
-  padding: 0.9375rem 1rem;
-  color: var(--phosphor);
+  padding: 0.9375rem 0.875rem;
+  color: var(--ink);
   font-family: inherit;
   font-size: 0.8125rem;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   resize: none;
   outline: none;
   max-height: 6rem;
 }
 
 .composer-input::placeholder {
-  color: var(--phosphor-dim);
+  color: var(--rule-color);
   text-transform: uppercase;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
 }
 
 .composer-input:focus-visible {
-  background: var(--panel);
+  background: var(--tint);
 }
 
 .send {
   border: 0;
-  border-left: var(--rule);
-  background: var(--hazard);
-  color: var(--phosphor);
+  border-left: var(--rule-heavy);
+  background: var(--accent);
+  color: var(--ink);
   font-family: inherit;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 0 1.125rem;
+  padding: 0 1rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .send:hover:not(:disabled) {
-  background: var(--phosphor);
-  color: var(--substrate);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .send:disabled {
-  background: var(--panel);
-  color: var(--phosphor-dim);
+  background: var(--tint);
+  color: var(--rule-color);
   cursor: not-allowed;
 }
 

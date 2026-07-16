@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1e2a0d",
+  themeColor: "#fef1c6",
   // The composer is pinned to the bottom, so the handset must not zoom-scroll.
   maximumScale: 1,
 };

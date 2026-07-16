@@ -22,29 +22,39 @@ const GREETING: TranscriptItem = {
     "Support agent online. Ask about an order, a cart, or a refund — I can act on it, not just talk about it.",
 };
 
-function EmailCard({ email }: { email: EmailPreview }) {
+/** The email renders as a detachable ticket stub: label bar, rows, barcode. */
+function EmailStub({ email }: { email: EmailPreview }) {
   return (
     <figure className="email-panel" style={{ margin: 0 }}>
-      <figcaption className="email-bar">
-        <span className="telemetry">&gt;&gt;&gt; Email {email.status}</span>
-        <span className="telemetry">Resend&nbsp;®</span>
-      </figcaption>
-      <dl className="email-rows" style={{ margin: 0 }}>
-        {(
-          [
-            ["To", email.to],
-            ["Subject", email.subject],
-            ["Body", email.body],
-          ] as const
-        ).map(([label, value]) => (
-          <div className="email-row" key={label}>
-            <dt className="telemetry telemetry-hazard">[ {label} ]</dt>
-            <dd className="email-value" style={{ margin: 0 }}>
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="stub stub-accent" aria-hidden="true">
+        Email {email.status} →
+      </div>
+      <div className="email-main">
+        <div className="email-head">
+          <span className="label label-ink">[ Dispatch ]</span>
+          <span className="label">Resend ®</span>
+        </div>
+        <dl className="email-rows" style={{ margin: 0 }}>
+          {(
+            [
+              ["To", email.to],
+              ["Subject", email.subject],
+              ["Body", email.body],
+            ] as const
+          ).map(([label, value]) => (
+            <div className="email-row" key={label}>
+              <dt className="label">{label}</dt>
+              <dd className="email-value" style={{ margin: 0 }}>
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <div className="email-foot">
+          <div className="barcode" aria-hidden="true" />
+          <span className="label">No. 6 702354 58190 — Olu / D-01</span>
+        </div>
+      </div>
     </figure>
   );
 }
@@ -143,17 +153,29 @@ export default function Home() {
   return (
     <main className="shell">
       <header className="header">
-        <div className="header-meta">
-          <span className="telemetry">[ Olu / Support ]</span>
-          <span className="telemetry status-live">
-            <span className="status-dot" aria-hidden="true" />
-            Online
-          </span>
+        <div className="stub" aria-hidden="true">
+          Support / Olu / Unit D-01
         </div>
-        <h1 className="header-title">Store Agent</h1>
-        <div className="header-meta">
-          <span className="telemetry">Unit / D-01</span>
-          <span className="telemetry">Rev 2.6 — Replies in ~1 min</span>
+        <div className="header-body">
+          <div className="header-row">
+            <span className="label label-ink">[ Olu Supply Co. ]</span>
+            <span className="label status-live">
+              <span className="status-dot" aria-hidden="true" />
+              Online
+            </span>
+          </div>
+          <h1 className="header-title">Store Agent</h1>
+          <div className="dots" aria-hidden="true" />
+          <div className="header-data">
+            <div className="header-cell">
+              <span className="label">Replies in</span>
+              <data className="datum">1 MIN</data>
+            </div>
+            <div className="header-cell">
+              <span className="label">Desk</span>
+              <data className="datum">A/02</data>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -166,19 +188,23 @@ export default function Home() {
             }`}
             style={item.email ? { maxWidth: "100%" } : undefined}
           >
-            <span className="telemetry">
-              {item.role === "user" ? "You" : "Agent"}
-            </span>
+            <div className="msg-head">
+              <span className="label">
+                {item.role === "user" ? "You" : "Agent →"}
+              </span>
+            </div>
             <p className="msg-body" style={{ margin: 0 }}>
               {item.content}
             </p>
-            {item.email ? <EmailCard email={item.email} /> : null}
+            {item.email ? <EmailStub email={item.email} /> : null}
           </article>
         ))}
 
         {pending ? (
           <article className="msg msg-agent">
-            <span className="telemetry">Agent</span>
+            <div className="msg-head">
+              <span className="label">Agent →</span>
+            </div>
             <div className="typing" aria-label="Agent is typing">
               <span className="typing-block" />
               <span className="typing-block" />
@@ -217,7 +243,7 @@ export default function Home() {
           type="submit"
           disabled={pending || !draft.trim()}
         >
-          Send
+          Send <span aria-hidden="true">↗</span>
         </button>
       </form>
     </main>

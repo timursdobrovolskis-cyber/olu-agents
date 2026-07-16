@@ -14,14 +14,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Olu Support",
-  description: "Chat with the store's support agent.",
+  title: "Olu — Build Intake",
+  description: "Answer three questions; the agent picks which automation to build.",
 };
 
 export const viewport: Viewport = {
   themeColor: "#fef1c6",
-  // The composer is pinned to the bottom, so the handset must not zoom-scroll.
-  maximumScale: 1,
 };
 
 export default function RootLayout({

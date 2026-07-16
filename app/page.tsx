@@ -3,6 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "./icons";
 import {
+  formatBytes,
+  isBuildResponse,
+  isChatResponse,
+  mockReply,
+  skeletonFor,
+  STEP_LABEL,
+  turnId,
+  type BuildRequest,
+  type BuildStep,
+  type ChatRequest,
+  type ChatTurn,
+  type ImportedFile,
+} from "@/lib/build";
+import {
   automationById,
   describeAnswer,
   isAnswered,
@@ -17,6 +31,10 @@ import {
   type RecommendRequest,
   type Verdict,
 } from "@/lib/intake";
+
+type Phase = "intake" | "import" | "building" | "chat";
+
+/* -------------------------------------------------------------------------- */
 
 function EmailStub({ email }: { email: EmailPreview }) {
   return (
@@ -87,7 +105,6 @@ function VerdictCard({ rec }: { rec: Recommendation }) {
   );
 }
 
-/** One question: numbered answer bars, an "other" escape hatch, confirm. */
 function QuestionBlock({
   question,
   onAnswer,
@@ -126,7 +143,6 @@ function QuestionBlock({
     (id: string) => {
       if (!multi) {
         setSelected([id]);
-        // Single-choice with a concrete option needs no confirmation step.
         if (id !== "other") onAnswer({ selected: [id] });
         return;
       }
@@ -143,11 +159,9 @@ function QuestionBlock({
     onAnswer({ selected, other: other.trim() || undefined });
   }, [ready, selected, other, onAnswer]);
 
-  // Number keys pick, Enter confirms. Typing in "other" must win over both.
   useEffect(() => {
     const handler = (e: KeyboardEvent): boolean => {
       const typing = document.activeElement === otherRef.current;
-
       if (e.key === "Enter") {
         if (multi || otherOn) {
           submit();
@@ -156,7 +170,6 @@ function QuestionBlock({
         return false;
       }
       if (typing) return false;
-
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= rows.length) {
         toggle(rows[n - 1].id);
@@ -226,14 +239,179 @@ function QuestionBlock({
   );
 }
 
+/** Real drag-and-drop. Files are read for name/size/type and never uploaded. */
+function ImportPanel({
+  files,
+  onFiles,
+  onBuild,
+  automationName,
+}: {
+  files: ImportedFile[];
+  onFiles: (f: ImportedFile[]) => void;
+  onBuild: () => void;
+  automationName: string;
+}) {
+  const [hot, setHot] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const take = useCallback(
+    (list: FileList | null) => {
+      if (!list?.length) return;
+      const next = Array.from(list).map((f) => ({
+        name: f.name,
+        size: f.size,
+        kind: f.type || f.name.split(".").pop()?.toUpperCase() || "FILE",
+      }));
+      onFiles(next);
+    },
+    [onFiles],
+  );
+
+  return (
+    <>
+      <div
+        className={`dropzone ${hot ? "dropzone-hot" : ""}`}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setHot(true);
+        }}
+        onDragLeave={() => setHot(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setHot(false);
+          take(e.dataTransfer.files);
+        }}
+      >
+        <span className="dropzone-title">Drop your data here</span>
+        <span className="label">
+          Orders · Products · Customers — CSV, XLSX, JSON
+        </span>
+        <span className="option-note">Or click to browse</span>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => take(e.target.files)}
+        />
+      </div>
+
+      {files.length ? (
+        <div className="manifest">
+          {files.map((f) => (
+            <div className="manifest-row" key={f.name}>
+              <span className="label">[ OK ]</span>
+              <span className="manifest-name">{f.name}</span>
+              <span className="label">{formatBytes(f.size)}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <button type="button" className="confirm" onClick={onBuild}>
+        {files.length
+          ? `Build ${automationName} ↵`
+          : `Skip — build ${automationName} anyway ↵`}
+      </button>
+    </>
+  );
+}
+
+function ChatPanel({
+  turns,
+  pending,
+  onSend,
+}: {
+  turns: ChatTurn[];
+  pending: boolean;
+  onSend: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [turns, pending]);
+
+  function send() {
+    const text = draft.trim();
+    if (!text || pending) return;
+    onSend(text);
+    setDraft("");
+  }
+
+  return (
+    <div className="chat">
+      <div className="chat-log" aria-live="polite">
+        {turns.map((t) => (
+          <article
+            key={t.id}
+            className={`turn ${t.role === "user" ? "turn-user" : "turn-agent"}`}
+          >
+            <span className="label">{t.role === "user" ? "You" : "Agent →"}</span>
+            <p className="turn-body" style={{ margin: 0 }}>
+              {t.content}
+            </p>
+          </article>
+        ))}
+        {pending ? (
+          <div className="typing" aria-label="Agent is typing">
+            <span className="typing-block" />
+            <span className="typing-block" />
+            <span className="typing-block" />
+          </div>
+        ) : null}
+        <div ref={endRef} />
+      </div>
+      <form
+        className="chat-composer"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+      >
+        <textarea
+          ref={inputRef}
+          className="chat-input"
+          rows={1}
+          value={draft}
+          placeholder="Ask about the build"
+          aria-label="Message"
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+        />
+        <button className="send" type="submit" disabled={pending || !draft.trim()}>
+          Send <span aria-hidden="true">↗</span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
 export default function Home() {
   const [answers, setAnswers] = useState<Answers>({});
   const [rec, setRec] = useState<Recommendation | null>(null);
-  const [pending, setPending] = useState(false);
+  const [phase, setPhase] = useState<Phase>("intake");
+  const [deciding, setDeciding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [files, setFiles] = useState<ImportedFile[]>([]);
+  const [steps, setSteps] = useState<BuildStep[]>([]);
+  const [shown, setShown] = useState(0);
+
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [replying, setReplying] = useState(false);
+
   const asked = useRef(false);
-  // The active question owns the number keys; the stage owns the rest.
   const questionKeys = useRef<((e: KeyboardEvent) => boolean) | null>(null);
   const registerKeys = useCallback(
     (h: ((e: KeyboardEvent) => boolean) | null) => {
@@ -245,19 +423,30 @@ export default function Home() {
   const queue = visibleQuestions(answers);
   const current = queue.find((q) => !isAnswered(q, answers));
   const answered = queue.filter((q) => isAnswered(q, answers));
+  const auto = rec ? automationById(rec.chosen.automationId) : null;
 
   const reset = useCallback(() => {
     asked.current = false;
     setAnswers({});
     setRec(null);
     setError(null);
-    setPending(false);
+    setDeciding(false);
+    setPhase("intake");
+    setFiles([]);
+    setSteps([]);
+    setShown(0);
+    setTurns([]);
+    setReplying(false);
   }, []);
 
   const goBack = useCallback(() => {
     setRec(null);
     setError(null);
     asked.current = false;
+    setPhase("intake");
+    setSteps([]);
+    setShown(0);
+    setTurns([]);
     setAnswers((prev) => {
       const order = visibleQuestions(prev).filter((q) => isAnswered(q, prev));
       const last = order[order.length - 1];
@@ -268,8 +457,6 @@ export default function Home() {
     });
   }, []);
 
-  // Stage-level keys. Backspace steps back, Escape resets, the rest defers
-  // to whichever question is on screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -278,7 +465,14 @@ export default function Home() {
         return;
       }
       if (e.key === "Backspace") {
-        if (document.activeElement instanceof HTMLInputElement) return;
+        // Backspace must delete text, not navigate, while typing anywhere.
+        const el = document.activeElement;
+        if (
+          el instanceof HTMLInputElement ||
+          el instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
         e.preventDefault();
         goBack();
         return;
@@ -289,7 +483,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, [reset, goBack]);
 
-  // Once every visible question is answered, ask the backend to decide.
+  // Intake finished — ask the backend to decide, then move to import.
   useEffect(() => {
     if (current || rec || asked.current) return;
     asked.current = true;
@@ -320,7 +514,7 @@ export default function Home() {
         : {}),
     };
 
-    setPending(true);
+    setDeciding(true);
     (async () => {
       try {
         const res = await fetch("/api/recommend", {
@@ -328,14 +522,11 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
-        // Until the backend lands, /api/recommend 404s — route locally instead.
         if (res.status === 404) {
           setRec(mockRecommendation(answers));
           return;
         }
         if (!res.ok) throw new Error(`Agent returned ${res.status}`);
-
         const data: unknown = await res.json();
         if (!isRecommendation(data)) throw new Error("Malformed response");
         setRec(data);
@@ -343,10 +534,126 @@ export default function Home() {
         setError(err instanceof Error ? err.message : "unknown fault");
         setRec(mockRecommendation(answers));
       } finally {
-        setPending(false);
+        setDeciding(false);
+        setPhase("import");
       }
     })();
   }, [current, rec, answers]);
+
+  const startBuild = useCallback(() => {
+    if (!rec) return;
+    setPhase("building");
+    setShown(0);
+
+    const payload: BuildRequest = {
+      automationId: rec.chosen.automationId,
+      files: files.map((f) => ({ name: f.name, size: f.size, kind: f.kind })),
+    };
+
+    (async () => {
+      let plan = skeletonFor(rec.chosen.automationId);
+      try {
+        const res = await fetch("/api/build", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data: unknown = await res.json();
+          if (isBuildResponse(data) && data.steps.length) plan = data.steps;
+        }
+      } catch {
+        // keep the local skeleton — the build must never dead-end on stage
+      }
+      setSteps(plan);
+    })();
+  }, [rec, files]);
+
+  // Reveal the skeleton a step at a time, then open the chat.
+  useEffect(() => {
+    if (phase !== "building" || !steps.length) return;
+    if (shown >= steps.length) {
+      const t = setTimeout(() => {
+        setPhase("chat");
+        setTurns([
+          {
+            id: turnId(),
+            role: "agent",
+            content: `Skeleton's up — ${steps.length} steps, wired to the data you imported. Ask me anything about it, or tell me what to change.`,
+          },
+        ]);
+      }, 500);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setShown((n) => n + 1), 420);
+    return () => clearTimeout(t);
+  }, [phase, steps, shown]);
+
+  const send = useCallback(
+    (text: string) => {
+      if (!rec) return;
+      const history = turns.map(({ role, content }) => ({ role, content }));
+      setTurns((prev) => [
+        ...prev,
+        { id: turnId(), role: "user", content: text },
+      ]);
+      setReplying(true);
+
+      const payload: ChatRequest = {
+        automationId: rec.chosen.automationId,
+        message: text,
+        history,
+      };
+
+      (async () => {
+        const fallback = () =>
+          mockReply(text, auto?.name ?? "this automation");
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          const data: unknown = await res.json();
+          const reply = isChatResponse(data) ? data.reply : fallback();
+          setTurns((prev) => [
+            ...prev,
+            { id: turnId(), role: "agent", content: reply },
+          ]);
+        } catch {
+          // Scripted fallback: the pitch's last beat must never dead-end.
+          setTurns((prev) => [
+            ...prev,
+            { id: turnId(), role: "agent", content: fallback() },
+          ]);
+        } finally {
+          setReplying(false);
+        }
+      })();
+    },
+    [rec, turns, auto],
+  );
+
+  const stageLabel =
+    phase === "intake"
+      ? current
+        ? `Question ${answered.length + 1} / ${queue.length}`
+        : "Deciding"
+      : phase === "import"
+        ? "Import / Step 1 of 1"
+        : phase === "building"
+          ? `Building — ${shown} / ${steps.length || "…"}`
+          : "Live build";
+
+  const prompt =
+    phase === "intake"
+      ? current?.prompt ?? "That's everything I need."
+      : phase === "import"
+        ? "Import your data so I build this against your real orders — not a guess."
+        : phase === "building"
+          ? `Wiring up ${auto?.name ?? "the automation"}…`
+          : `${auto?.name ?? "It"} is built. Talk to it.`;
 
   return (
     <main className="stage">
@@ -357,11 +664,16 @@ export default function Home() {
       <div className="stage-main">
         <header className="stage-head">
           <div className="head-left">
-            <h1 className="stage-title">Build Intake</h1>
+            <h1 className="stage-title">
+              {phase === "chat" ? "Live Build" : "Build Intake"}
+            </h1>
             <span className="label">[ Olu Supply Co. ]</span>
           </div>
           <div className="head-right">
-            <span className="progress" aria-label={`${answered.length} of ${queue.length} answered`}>
+            <span
+              className="progress"
+              aria-label={`${answered.length} of ${queue.length} answered`}
+            >
               {queue.map((q, i) => (
                 <span
                   key={q.id}
@@ -381,19 +693,10 @@ export default function Home() {
 
         <div className="stage-body">
           <section className="col-intake">
-            <span className="label">
-              {current
-                ? `Question ${answered.length + 1} / ${queue.length}`
-                : "Intake complete"}
-            </span>
+            <span className="label">{stageLabel}</span>
+            <p className="prompt">{prompt}</p>
 
-            <p className="prompt">
-              {current
-                ? current.prompt
-                : "That's everything I need — the verdict is on the right."}
-            </p>
-
-            {current ? (
+            {phase === "intake" && current ? (
               <QuestionBlock
                 key={current.id}
                 question={current}
@@ -402,63 +705,130 @@ export default function Home() {
                   setAnswers((prev) => ({ ...prev, [current.id]: a }))
                 }
               />
-            ) : rec?.email ? (
-              // The intake column empties once answered; the dispatch lands
-              // here so the verdict column isn't fighting for height.
-              <EmailStub email={rec.email} />
+            ) : phase === "import" ? (
+              <ImportPanel
+                files={files}
+                onFiles={setFiles}
+                onBuild={startBuild}
+                automationName={auto?.name ?? "it"}
+              />
+            ) : phase === "building" ? (
+              <div className="typing" aria-label="Building">
+                <span className="typing-block" />
+                <span className="typing-block" />
+                <span className="typing-block" />
+              </div>
+            ) : phase === "chat" ? (
+              <ChatPanel turns={turns} pending={replying} onSend={send} />
             ) : (
               <div className="dots" aria-hidden="true" />
             )}
 
             <div className="legend">
-              <span className="label">[1-7] Select</span>
-              <span className="label">[↵] Confirm</span>
+              {phase === "intake" ? (
+                <>
+                  <span className="label">[1-7] Select</span>
+                  <span className="label">[↵] Confirm</span>
+                </>
+              ) : (
+                <span className="label">[↵] Send</span>
+              )}
               <span className="label">[⌫] Back</span>
               <span className="label">[Esc] Reset</span>
             </div>
           </section>
 
           <section className="col-dossier" aria-live="polite">
-            <span className="label label-ink">[ Dossier ]</span>
+            <span className="label label-ink">
+              {phase === "building" || phase === "chat"
+                ? "[ Skeleton ]"
+                : "[ Dossier ]"}
+            </span>
 
-            <div style={{ display: "grid", gap: "0.875rem", alignContent: "start", minHeight: 0 }}>
-              <div className="dossier">
-                {QUESTIONS.map((q) => {
-                  const shown = queue.some((v) => v.id === q.id);
-                  const done = isAnswered(q, answers);
-                  return (
-                    <div className="dossier-row" key={q.id}>
-                      <span className="label">{q.id}</span>
-                      <span
-                        className={`dossier-value ${done ? "" : "dossier-await"}`}
-                      >
-                        {done
-                          ? describeAnswer(q, answers[q.id]!)
-                          : shown
-                            ? "Awaiting…"
-                            : "Not applicable"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {pending ? (
-                <div className="typing" aria-label="Agent is deciding">
-                  <span className="typing-block" />
-                  <span className="typing-block" />
-                  <span className="typing-block" />
-                </div>
-              ) : null}
-
-              {rec ? (
+            <div
+              style={{
+                display: "grid",
+                gap: "0.625rem",
+                alignContent: "start",
+                minHeight: 0,
+              }}
+            >
+              {phase === "building" || phase === "chat" ? (
                 <>
-                  <VerdictCard rec={rec} />
-                  {error ? (
-                    <span className="label">{`/// Routed locally — ${error}`}</span>
+                  {auto ? (
+                    <div className="verdict-slim">
+                      <span className="label">[ {auto.code} ]</span>
+                      <span className="verdict-slim-name">{auto.name}</span>
+                    </div>
+                  ) : null}
+                  <div className="steps">
+                    {steps.slice(0, shown).map((s, i) => (
+                      <div className={`step step-${s.kind}`} key={i}>
+                        <span className="step-kind">{STEP_LABEL[s.kind]}</span>
+                        <span>
+                          <span className="step-title">{s.title}</span>
+                          <br />
+                          <span className="step-detail">{s.detail}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {files.length ? (
+                    <div className="manifest">
+                      <div className="manifest-row">
+                        <span className="label">[ Imported ]</span>
+                        <span className="label">{files.length} file(s)</span>
+                        <span className="label">
+                          {formatBytes(
+                            files.reduce((s, f) => s + f.size, 0),
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   ) : null}
                 </>
-              ) : null}
+              ) : (
+                <>
+                  <div className="dossier">
+                    {QUESTIONS.map((q) => {
+                      const shownQ = queue.some((v) => v.id === q.id);
+                      const done = isAnswered(q, answers);
+                      return (
+                        <div className="dossier-row" key={q.id}>
+                          <span className="label">{q.id}</span>
+                          <span
+                            className={`dossier-value ${done ? "" : "dossier-await"}`}
+                          >
+                            {done
+                              ? describeAnswer(q, answers[q.id]!)
+                              : shownQ
+                                ? "Awaiting…"
+                                : "Not applicable"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {deciding ? (
+                    <div className="typing" aria-label="Agent is deciding">
+                      <span className="typing-block" />
+                      <span className="typing-block" />
+                      <span className="typing-block" />
+                    </div>
+                  ) : null}
+
+                  {rec ? (
+                    <>
+                      <VerdictCard rec={rec} />
+                      {rec.email ? <EmailStub email={rec.email} /> : null}
+                      {error ? (
+                        <span className="label">{`/// Routed locally — ${error}`}</span>
+                      ) : null}
+                    </>
+                  ) : null}
+                </>
+              )}
             </div>
           </section>
         </div>

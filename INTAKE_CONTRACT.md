@@ -1,10 +1,25 @@
-# `/api/recommend` — frontend ↔ backend contract
+# frontend ↔ backend contract
 
-> **This replaces `CHAT_CONTRACT.md`.** The product is no longer a free-text
-> chatbot. The frontend runs a fixed questionnaire and calls the backend **once**,
-> at the end, with all answers. There is no `/api/chat` and no per-turn call.
+The demo runs in two acts and calls three endpoints. **Every one of them has a
+local fallback**, so the pitch survives all three being absent — build them in
+whatever order suits you.
 
-Types live in [`lib/intake.ts`](lib/intake.ts) — import them in the route handler
+| Act | Endpoint | When |
+| --- | --- | --- |
+| 1 — intake | `POST /api/recommend` | Once, after the last question |
+| 2 — build | `POST /api/build` | Once, when the pitcher hits Build |
+| 2 — chat | `POST /api/chat` | Per message, after the build |
+
+> **Supersedes the deleted `CHAT_CONTRACT.md`.** `/api/chat` exists again, but
+> it is *not* the old conversational front door — it only answers questions
+> about an automation that has already been built.
+
+**The pitch path is `Fashion & Apparel` → `Cart abandonment` → `One-off
+purchase`**, which routes to `recovery`. If time is short, make that path good
+and let the rest fall back.
+
+Types live in [`lib/intake.ts`](lib/intake.ts) (act 1) and
+[`lib/build.ts`](lib/build.ts) (act 2) — import them in the route handlers
 rather than redeclaring, so the two sides can't drift.
 
 ## What the frontend does on its own
@@ -98,3 +113,63 @@ falls back to and is worth matching in spirit.
 
 **Renaming the three automations is safe** — edit `AUTOMATIONS` and both the UI
 and the routing follow. Only the `id`s are part of this contract.
+
+---
+
+# Act 2 — `POST /api/build`
+
+Called once when the pitcher hits Build, after the verdict. Returns the
+automation skeleton, which the UI reveals one step at a time.
+
+```jsonc
+// request
+{
+  "automationId": "recovery",
+  "files": [                                  // may be empty — importing is optional
+    { "name": "orders_2026.csv", "size": 48210, "kind": "text/csv" }
+  ]
+}
+```
+
+**Files are metadata only.** The frontend never uploads contents — it reads
+name, size and type locally and lists them. If you want the real bytes, say so
+and I'll add a multipart upload; don't assume they're arriving.
+
+```jsonc
+// response
+{
+  "steps": [
+    { "kind": "trigger", "title": "Checkout abandoned", "detail": "Shopify webhook — cart idle for 60 minutes" },
+    { "kind": "guard",   "title": "Contactable & consented", "detail": "Has email, marketing consent true" }
+  ]
+}
+```
+
+- `kind` must be one of `trigger` | `guard` | `fetch` | `compose` | `dispatch` |
+  `follow` | `stop`. It drives the colour of the tag: `trigger` and `dispatch`
+  are ochre, `stop` is brick, the rest carbon.
+- `title` is short (2-4 words). `detail` is one line — it renders small and must
+  not wrap past two lines at 1080p.
+- 4-8 steps. Seven is what the local skeleton uses and what the column fits.
+- Anything non-200, malformed, or empty falls back to `skeletonFor()` in
+  `lib/build.ts` — which is a genuine Cart Recovery skeleton, so a failure here
+  is invisible.
+
+# Act 2 — `POST /api/chat`
+
+Per message, after the build. Scoped to the automation just built — this is not
+a general assistant.
+
+```jsonc
+// request
+{ "automationId": "recovery", "message": "how soon does it send?", "history": [ { "role": "agent", "content": "Skeleton's up…" } ] }
+
+// response
+{ "reply": "It fires 60 minutes after the cart goes idle." }
+```
+
+- `role` is `"user" | "agent"` — **not** `"assistant"`. Map it at the boundary.
+- Keep replies to 1-2 sentences. This renders on a projected screen; a paragraph
+  is unreadable from the back and kills the pace.
+- Any failure falls back to `mockReply()` in `lib/build.ts` — keyword-matched
+  canned answers covering timing, edits, data, spam, cost, and going live.

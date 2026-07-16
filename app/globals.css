@@ -1,26 +1,342 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   COLOUR WAYS — swap these values to re-skin the entire interface.
+   Substrate: Tactical Telemetry (dark). Do not mix in a light substrate.
+   ========================================================================== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --substrate: #0a0a0a; /* deactivated CRT — never pure black */
+  --panel: #121212; /* raised compartment */
+  --phosphor: #eaeaea; /* primary text */
+  --phosphor-dim: #6f6f6f; /* metadata, timestamps, unit ids */
+  --hazard: #e61919; /* THE accent — alerts, rules, agent marker */
+  --terminal-green: #4af626; /* reserved: live status indicator ONLY */
+
+  --rule: 1px solid var(--phosphor-dim);
+  --rule-heavy: 2px solid var(--phosphor);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--substrate);
+  --color-foreground: var(--phosphor);
+  --font-sans: var(--font-archivo-black);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+* {
+  border-radius: 0 !important; /* mechanical rigidity: 90° corners only */
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--substrate);
+  color: var(--phosphor);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* CRT scanline sweep, applied globally above the DOM. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.28) 2px,
+    rgba(0, 0, 0, 0.28) 4px
+  );
+}
+
+/* --------------------------------------------------------------------------
+   MICRO-TYPOGRAPHY — metadata, unit ids, coordinates
+   -------------------------------------------------------------------------- */
+.telemetry {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--phosphor-dim);
+  line-height: 1.2;
+}
+
+.telemetry-hazard {
+  color: var(--hazard);
+}
+
+/* --------------------------------------------------------------------------
+   SHELL — the handset. Mobile-first: full bleed, framed at >=480px.
+   -------------------------------------------------------------------------- */
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100dvh;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-left: var(--rule);
+  border-right: var(--rule);
+  background: var(--substrate);
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   HEADER
+   -------------------------------------------------------------------------- */
+.header {
+  border-bottom: var(--rule-heavy);
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.5rem;
+  background: var(--substrate);
+}
+
+.header-title {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1.5rem, 7vw, 2.25rem);
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.header-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Terminal green earns its single use here: the live-status indicator. */
+.status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--terminal-green);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  animation: pulse 2s steps(2, end) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.2;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --------------------------------------------------------------------------
+   TRANSCRIPT
+   -------------------------------------------------------------------------- */
+.transcript {
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--phosphor-dim) transparent;
+}
+
+.msg {
+  display: grid;
+  gap: 0.3125rem;
+  max-width: 85%;
+}
+
+.msg-user {
+  justify-self: end;
+  text-align: right;
+}
+
+.msg-agent {
+  justify-self: start;
+}
+
+.msg-body {
+  border: var(--rule);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--panel);
+}
+
+/* The agent is the system speaking: hazard-red left rule marks it. */
+.msg-agent .msg-body {
+  border-left: 3px solid var(--hazard);
+}
+
+.msg-user .msg-body {
+  background: var(--phosphor);
+  color: var(--substrate);
+  border-color: var(--phosphor);
+}
+
+.msg-error .msg-body {
+  border-color: var(--hazard);
+  color: var(--hazard);
+  background: var(--substrate);
+}
+
+/* --------------------------------------------------------------------------
+   TYPING INDICATOR
+   -------------------------------------------------------------------------- */
+.typing {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: var(--rule);
+  border-left: 3px solid var(--hazard);
+  background: var(--panel);
+}
+
+.typing-block {
+  width: 7px;
+  height: 12px;
+  background: var(--hazard);
+  animation: blocks 1.05s steps(2, end) infinite;
+}
+
+.typing-block:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.typing-block:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes blocks {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   EMAIL PREVIEW — the "email sent →" panel
+   -------------------------------------------------------------------------- */
+.email-panel {
+  border: var(--rule);
+  border-left: 3px solid var(--hazard);
+  background: var(--panel);
+  display: grid;
+  animation: boot 220ms steps(4, end);
+}
+
+@keyframes boot {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.email-bar {
+  background: var(--hazard);
+  color: var(--phosphor);
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.email-bar .telemetry {
+  color: inherit;
+}
+
+.email-rows {
+  display: grid;
+  gap: 1px;
+  background: var(--phosphor-dim); /* grid gap renders the hairline rules */
+  border-top: var(--rule);
+}
+
+.email-row {
+  background: var(--panel);
+  padding: 0.5rem;
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.email-value {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--phosphor);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* --------------------------------------------------------------------------
+   COMPOSER
+   -------------------------------------------------------------------------- */
+.composer {
+  border-top: var(--rule-heavy);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background: var(--substrate);
+}
+
+.composer-input {
+  background: transparent;
+  border: 0;
+  padding: 0.9375rem 1rem;
+  color: var(--phosphor);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  letter-spacing: 0.03em;
+  resize: none;
+  outline: none;
+  max-height: 6rem;
+}
+
+.composer-input::placeholder {
+  color: var(--phosphor-dim);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+}
+
+.composer-input:focus-visible {
+  background: var(--panel);
+}
+
+.send {
+  border: 0;
+  border-left: var(--rule);
+  background: var(--hazard);
+  color: var(--phosphor);
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 1.125rem;
+  cursor: pointer;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--phosphor);
+  color: var(--substrate);
+}
+
+.send:disabled {
+  background: var(--panel);
+  color: var(--phosphor-dim);
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot,
+  .typing-block,
+  .email-panel {
+    animation: none;
+  }
 }

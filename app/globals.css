@@ -40,10 +40,12 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   MICRO-TYPOGRAPHY — sized for the back of the room, not for a phone
+   MICRO-TYPOGRAPHY — sized for the back of the room, not for a phone.
+   Everything scales with vw: the target is 1920x1080 fullscreen, but it must
+   not collapse on a 1280 laptop while rehearsing.
    -------------------------------------------------------------------------- */
 .label {
-  font-size: 0.8125rem;
+  font-size: clamp(0.75rem, 0.75vw, 0.9375rem);
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -52,14 +54,6 @@ body {
 }
 
 .label-ink {
-  color: var(--ink);
-}
-
-.datum {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 0.9;
   color: var(--ink);
 }
 
@@ -87,7 +81,7 @@ body {
 }
 
 .barcode {
-  height: 2rem;
+  height: 1.375rem;
   background-image: repeating-linear-gradient(
     90deg,
     var(--ink) 0 2px,
@@ -144,7 +138,7 @@ body {
 
 .stage-title {
   font-family: var(--font-archivo-black), system-ui, sans-serif;
-  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  font-size: clamp(1.75rem, 3.2vw, 3.75rem);
   letter-spacing: -0.05em;
   line-height: 0.85;
   text-transform: uppercase;
@@ -218,10 +212,10 @@ body {
 
 .col-dossier {
   background: var(--tint);
-  padding: 1.25rem;
+  padding: clamp(0.75rem, 0.9vw, 1.125rem);
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 0.875rem;
+  gap: 0.625rem;
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
@@ -233,7 +227,7 @@ body {
 .prompt {
   border-left: 6px solid var(--accent);
   padding-left: 0.875rem;
-  font-size: clamp(1.125rem, 1.9vw, 1.625rem);
+  font-size: clamp(1.25rem, 2vw, 2.25rem);
   font-weight: 700;
   line-height: 1.25;
   margin: 0;
@@ -275,11 +269,11 @@ body {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  padding: 0.5rem 0.75rem;
+  padding: clamp(0.5rem, 0.7vw, 0.875rem) clamp(0.75rem, 1vw, 1.125rem);
   display: grid;
   grid-template-columns: auto auto 1fr auto;
   align-items: center;
-  gap: 0.875rem;
+  gap: clamp(0.75rem, 1vw, 1.25rem);
   min-width: 0;
 }
 
@@ -298,12 +292,12 @@ body {
 
 /* The keyboard shortcut, shown so the audience sees deliberate control. */
 .key {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: clamp(1.75rem, 1.8vw, 2.25rem);
+  height: clamp(1.75rem, 1.8vw, 2.25rem);
   border: 2px solid currentColor;
   display: grid;
   place-items: center;
-  font-size: 0.8125rem;
+  font-size: clamp(0.8125rem, 0.85vw, 1.0625rem);
   font-weight: 800;
   flex: none;
 }
@@ -314,12 +308,17 @@ body {
 }
 
 .option-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: clamp(2.5rem, 2.6vw, 3.25rem);
+  height: clamp(2.5rem, 2.6vw, 3.25rem);
   border: 2px solid currentColor;
   display: grid;
   place-items: center;
   flex: none;
+}
+
+.option-icon svg {
+  width: 60%;
+  height: 60%;
 }
 
 .option-on .option-icon {
@@ -334,14 +333,14 @@ body {
 }
 
 .option-label {
-  font-size: 1.0625rem;
+  font-size: clamp(1.0625rem, 1.25vw, 1.5rem);
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.15;
 }
 
 .option-note {
-  font-size: 0.75rem;
+  font-size: clamp(0.75rem, 0.85vw, 1rem);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--rule-color);
@@ -375,7 +374,7 @@ body {
   padding: 0.75rem;
   color: var(--ink);
   font-family: inherit;
-  font-size: 1.0625rem;
+  font-size: clamp(1.0625rem, 1.25vw, 1.5rem);
   outline: none;
 }
 
@@ -441,14 +440,14 @@ body {
 
 .dossier-row {
   background: var(--paper);
-  padding: 0.625rem 0.75rem;
+  padding: 0.4375rem 0.75rem;
   display: grid;
-  gap: 0.25rem;
+  gap: 0.1875rem;
   min-width: 0;
 }
 
 .dossier-value {
-  font-size: 1.0625rem;
+  font-size: clamp(1rem, 1.15vw, 1.375rem);
   font-weight: 700;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -490,14 +489,14 @@ body {
 }
 
 .verdict-body {
-  padding: 0.75rem;
+  padding: 0.625rem 0.75rem;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .verdict-gate {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
-  font-size: clamp(3rem, 6vw, 5rem);
+  font-size: clamp(3rem, 6.5vw, 7rem);
   font-weight: 800;
   letter-spacing: -0.06em;
   line-height: 0.8;
@@ -506,7 +505,7 @@ body {
 
 .verdict-name {
   font-family: var(--font-archivo-black), system-ui, sans-serif;
-  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  font-size: clamp(1.5rem, 2.8vw, 3rem);
   letter-spacing: -0.04em;
   line-height: 0.95;
   text-transform: uppercase;
@@ -514,7 +513,7 @@ body {
 }
 
 .verdict-blurb {
-  font-size: 0.9375rem;
+  font-size: clamp(0.9375rem, 1vw, 1.25rem);
   line-height: 1.45;
   margin: 0;
 }
@@ -522,7 +521,7 @@ body {
 .verdict-reason {
   border-left: 5px solid var(--accent);
   padding-left: 0.625rem;
-  font-size: 0.875rem;
+  font-size: clamp(0.875rem, 0.95vw, 1.125rem);
   line-height: 1.35;
   font-weight: 700;
 }
@@ -544,7 +543,7 @@ body {
 }
 
 .ruled-name {
-  font-size: 0.9375rem;
+  font-size: clamp(0.9375rem, 1vw, 1.1875rem);
   font-weight: 700;
   text-decoration: line-through;
   text-decoration-color: var(--signal);
@@ -552,7 +551,7 @@ body {
 }
 
 .ruled-reason {
-  font-size: 0.75rem;
+  font-size: clamp(0.75rem, 0.8vw, 0.9375rem);
   color: var(--rule-color);
   line-height: 1.3;
 }
@@ -601,7 +600,7 @@ body {
 
 .email-foot {
   border-top: var(--rule);
-  padding: 0.5rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   display: grid;
   gap: 0.25rem;
 }

@@ -40,9 +40,6 @@ function EmailStub({ email }: { email: EmailPreview }) {
           </div>
         ))}
       </dl>
-      <div className="email-foot">
-        <div className="barcode" aria-hidden="true" />
-      </div>
     </figure>
   );
 }
@@ -405,6 +402,10 @@ export default function Home() {
                   setAnswers((prev) => ({ ...prev, [current.id]: a }))
                 }
               />
+            ) : rec?.email ? (
+              // The intake column empties once answered; the dispatch lands
+              // here so the verdict column isn't fighting for height.
+              <EmailStub email={rec.email} />
             ) : (
               <div className="dots" aria-hidden="true" />
             )}
@@ -453,7 +454,6 @@ export default function Home() {
               {rec ? (
                 <>
                   <VerdictCard rec={rec} />
-                  {rec.email ? <EmailStub email={rec.email} /> : null}
                   {error ? (
                     <span className="label">{`/// Routed locally — ${error}`}</span>
                   ) : null}

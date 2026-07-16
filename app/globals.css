@@ -173,6 +173,57 @@ body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   TOKENS — the wallet. One automation costs the lot.
+   -------------------------------------------------------------------------- */
+.tokens {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border: var(--rule-heavy);
+  padding: 0.25rem 0.5rem;
+  background: var(--paper);
+  flex: none;
+}
+
+.token-value {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.25rem, 1.7vw, 2.125rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  /* Tabular + fixed width: the header must not jitter as 100 ticks to 0. */
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+
+.token-bar {
+  width: clamp(60px, 6vw, 120px);
+  height: 12px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  flex: none;
+}
+
+.token-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Spent: the wallet reads as an alert, not as a quantity. */
+.tokens-spent {
+  border-color: var(--signal);
+}
+
+.tokens-spent .token-value {
+  color: var(--signal);
+}
+
+.tokens-spent .token-bar {
+  border-color: var(--signal);
+}
+
 .reset {
   border: var(--rule);
   background: var(--paper);

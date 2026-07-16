@@ -34,6 +34,13 @@ import {
 
 type Phase = "intake" | "import" | "building" | "chat";
 
+/** One automation costs one full wallet. */
+const TOKEN_BALANCE = 100;
+/** Delay between skeleton steps appearing. */
+const STEP_MS = 420;
+/** Beat after the last step before the chat opens. */
+const BUILD_TAIL_MS = 500;
+
 /* -------------------------------------------------------------------------- */
 
 function EmailStub({ email }: { email: EmailPreview }) {
@@ -245,11 +252,13 @@ function ImportPanel({
   onFiles,
   onBuild,
   automationName,
+  cost,
 }: {
   files: ImportedFile[];
   onFiles: (f: ImportedFile[]) => void;
   onBuild: () => void;
   automationName: string;
+  cost: number;
 }) {
   const [hot, setHot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -311,8 +320,8 @@ function ImportPanel({
 
       <button type="button" className="confirm" onClick={onBuild}>
         {files.length
-          ? `Build ${automationName} ↵`
-          : `Skip — build ${automationName} anyway ↵`}
+          ? `Build ${automationName} — ${cost} tokens ↵`
+          : `Skip — build ${automationName} anyway — ${cost} tokens ↵`}
       </button>
     </>
   );
@@ -410,6 +419,7 @@ export default function Home() {
 
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [replying, setReplying] = useState(false);
+  const [tokens, setTokens] = useState(TOKEN_BALANCE);
 
   const asked = useRef(false);
   const questionKeys = useRef<((e: KeyboardEvent) => boolean) | null>(null);
@@ -437,6 +447,7 @@ export default function Home() {
     setShown(0);
     setTurns([]);
     setReplying(false);
+    setTokens(TOKEN_BALANCE);
   }, []);
 
   const goBack = useCallback(() => {
@@ -447,6 +458,8 @@ export default function Home() {
     setSteps([]);
     setShown(0);
     setTurns([]);
+    // Stepping back un-buys the automation; the wallet is refunded.
+    setTokens(TOKEN_BALANCE);
     setAnswers((prev) => {
       const order = visibleQuestions(prev).filter((q) => isAnswered(q, prev));
       const last = order[order.length - 1];
@@ -569,23 +582,37 @@ export default function Home() {
     })();
   }, [rec, files]);
 
+  // Spend the wallet while the skeleton assembles, so cost and build read as
+  // one action. The rate is derived from this skeleton's own length — a fixed
+  // rate would strand the counter mid-count on shorter builds.
+  useEffect(() => {
+    if (phase !== "building" || !steps.length) return;
+    const total = steps.length * STEP_MS + BUILD_TAIL_MS;
+    const tick = Math.max(10, Math.floor(total / TOKEN_BALANCE));
+    const id = setInterval(() => setTokens((t) => (t <= 0 ? 0 : t - 1)), tick);
+    return () => clearInterval(id);
+  }, [phase, steps]);
+
   // Reveal the skeleton a step at a time, then open the chat.
   useEffect(() => {
     if (phase !== "building" || !steps.length) return;
     if (shown >= steps.length) {
       const t = setTimeout(() => {
+        // The build is bought outright: never leave the wallet mid-count,
+        // whatever the timers actually did.
+        setTokens(0);
         setPhase("chat");
         setTurns([
           {
             id: turnId(),
             role: "agent",
-            content: `Skeleton's up — ${steps.length} steps, wired to the data you imported. Ask me anything about it, or tell me what to change.`,
+            content: `Skeleton's up — ${steps.length} steps, wired to the data you imported. That's your hundred tokens spent. Ask me anything about it, or tell me what to change.`,
           },
         ]);
-      }, 500);
+      }, BUILD_TAIL_MS);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setShown((n) => n + 1), 420);
+    const t = setTimeout(() => setShown((n) => n + 1), STEP_MS);
     return () => clearTimeout(t);
   }, [phase, steps, shown]);
 
@@ -670,6 +697,22 @@ export default function Home() {
             <span className="label">[ Olu Supply Co. ]</span>
           </div>
           <div className="head-right">
+            <div
+              className={`tokens ${tokens === 0 ? "tokens-spent" : ""}`}
+              aria-label={`${tokens} of ${TOKEN_BALANCE} tokens remaining`}
+            >
+              <span className="label">Tokens</span>
+              <data className="token-value">{tokens}</data>
+              <span className="token-bar" aria-hidden="true">
+                <span
+                  className="token-fill"
+                  style={{
+                    width: `${(tokens / TOKEN_BALANCE) * 100}%`,
+                    display: "block",
+                  }}
+                />
+              </span>
+            </div>
             <span
               className="progress"
               aria-label={`${answered.length} of ${queue.length} answered`}
@@ -711,6 +754,7 @@ export default function Home() {
                 onFiles={setFiles}
                 onBuild={startBuild}
                 automationName={auto?.name ?? "it"}
+                cost={TOKEN_BALANCE}
               />
             ) : phase === "building" ? (
               <div className="typing" aria-label="Building">

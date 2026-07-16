@@ -13,6 +13,7 @@ export type IconName =
   | "food"
   | "digital"
   | "leads"
+  | "gigs"
   | "comms"
   | "forecast"
   | "analytics"
@@ -22,7 +23,7 @@ export type IconName =
   | "premium"
   | "other";
 
-export type ProblemId = "leads" | "comms" | "forecast" | "analytics";
+export type ProblemId = "leads" | "gigs" | "comms" | "forecast" | "analytics";
 export type QuestionId = "field" | "problems" | "product";
 
 export interface Option {
@@ -56,6 +57,9 @@ export type Answers = Partial<Record<QuestionId, Answer>>;
    THE THREE AUTOMATIONS — replace these with the real builds.
    `weights` maps a problem to how much this automation relieves it (0-3).
    Routing is driven entirely by this table; renaming is safe.
+
+   Declaration order is the tie-break: on an equal score the earlier entry
+   wins, so list them most-generally-applicable first.
    ========================================================================== */
 export interface Automation {
   id: string;
@@ -74,7 +78,10 @@ export const AUTOMATIONS: Automation[] = [
     name: "Cart Recovery",
     blurb:
       "Watches for abandoned checkouts and writes each customer a personal reason to come back — automatically, within the hour.",
-    weights: { leads: 3, comms: 1, forecast: 0, analytics: 0 },
+    // gigs is deliberately level with Concierge: "not enough work" is fixed by
+    // recovering lost checkouts in a shop but by converting enquiries in a
+    // service business, so FIELD_BONUS decides rather than this table.
+    weights: { leads: 3, gigs: 2, comms: 1, forecast: 0, analytics: 0 },
   },
   {
     id: "concierge",
@@ -82,7 +89,7 @@ export const AUTOMATIONS: Automation[] = [
     name: "Client Concierge",
     blurb:
       "Answers customer questions, chases replies, and keeps every conversation moving without anyone on your side typing.",
-    weights: { leads: 1, comms: 3, forecast: 0, analytics: 1 },
+    weights: { leads: 1, gigs: 2, comms: 3, forecast: 0, analytics: 1 },
   },
   {
     id: "forecast",
@@ -90,7 +97,7 @@ export const AUTOMATIONS: Automation[] = [
     name: "Forecast Desk",
     blurb:
       "Projects next month's sales from your own history and reports what moved, what stalled, and what to do about it.",
-    weights: { leads: 0, comms: 0, forecast: 3, analytics: 3 },
+    weights: { leads: 0, gigs: 0, comms: 0, forecast: 3, analytics: 3 },
   },
 ];
 
@@ -163,6 +170,12 @@ export const QUESTIONS: Question[] = [
         label: "Leads",
         note: "Traffic arrives but doesn't convert",
         icon: "leads",
+      },
+      {
+        id: "gigs",
+        label: "Too few gigs",
+        note: "Not enough work coming in at all",
+        icon: "gigs",
       },
       {
         id: "comms",

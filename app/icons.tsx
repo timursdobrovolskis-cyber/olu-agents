@@ -57,6 +57,16 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M3 4h18l-7 8v9l-4-3v-6L3 4Z" />
     </>
   ),
+  // A schedule with most of its slots empty
+  gigs: (
+    <>
+      <rect x="3" y="5" width="18" height="16" />
+      <path d="M3 10h18" />
+      <path d="M8 2v4M16 2v4" />
+      <rect x="6" y="13" width="3" height="3" />
+      <rect x="15" y="13" width="3" height="3" />
+    </>
+  ),
   // Two frames, talking
   comms: (
     <>

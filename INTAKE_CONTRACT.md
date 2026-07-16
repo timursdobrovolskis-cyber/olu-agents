@@ -32,7 +32,11 @@ Question 3 is **conditional**: it's skipped when `field` is `digital`
 ```
 
 - `problems` is multi-select, so it's an array — possibly with one entry, never
-  empty.
+  empty. Known ids: `leads` | `gigs` | `comms` | `forecast` | `analytics`.
+- `gigs` ("too few gigs" — not enough work coming in) is deliberately
+  field-sensitive: it points at Cart Recovery for a shop but Client Concierge
+  for a service business. Don't treat it as a synonym for `leads`, which is a
+  conversion problem rather than a demand one.
 - If the user chose "Other", `id` is `"other"` and `label` is **their typed
   text**. Handle it as free text; it won't match any known id.
 - `product` is absent for service businesses.

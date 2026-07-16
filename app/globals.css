@@ -350,6 +350,239 @@ body {
 }
 
 /* --------------------------------------------------------------------------
+   ANSWER BARS — the intake's option rows
+   -------------------------------------------------------------------------- */
+.options {
+  display: grid;
+  gap: 1px;
+  background: var(--rule-color); /* gap renders the hairlines between rows */
+  border: var(--rule-heavy);
+}
+
+.option {
+  background: var(--paper);
+  color: var(--ink);
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.5rem 0.625rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.option:hover {
+  background: var(--tint);
+}
+
+/* Selected rows strike as carbon blocks with the accent on the pictogram. */
+.option-on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.option-on:hover {
+  background: var(--ink);
+}
+
+.option-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.option-on .option-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.option-text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.option-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.option-note {
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rule-color);
+  line-height: 1.25;
+}
+
+.option-on .option-note {
+  color: var(--tint);
+}
+
+.option-mark {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  flex: none;
+}
+
+.option-on .option-mark {
+  color: var(--accent);
+}
+
+/* Free-text escape hatch, revealed under a selected "other". */
+.other-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  border: var(--rule-heavy);
+  border-top: 0;
+  background: var(--paper);
+}
+
+.confirm {
+  border: var(--rule-heavy);
+  border-top: 0;
+  background: var(--accent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.confirm:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.confirm:disabled {
+  background: var(--tint);
+  color: var(--rule-color);
+  cursor: not-allowed;
+}
+
+/* Step counter, set as a run of pass coupons. */
+.progress {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.progress-cell {
+  width: 14px;
+  height: 5px;
+  background: var(--tint);
+  border: 1px solid var(--rule-color);
+}
+
+.progress-cell-on {
+  background: var(--accent);
+  border-color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   VERDICT — the recommended build, issued as a gate card
+   -------------------------------------------------------------------------- */
+.verdict {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  border: var(--rule-heavy);
+  background: var(--paper);
+  animation: boot 200ms steps(3, end);
+}
+
+.verdict-main {
+  display: grid;
+  min-width: 0;
+}
+
+.verdict-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: var(--rule);
+}
+
+.verdict-body {
+  padding: 0.625rem 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.verdict-gate {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(2.5rem, 14vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+  margin: 0;
+}
+
+.verdict-name {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1.25rem, 6vw, 1.75rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.verdict-blurb {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.verdict-reason {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.5rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+/* The two it declined — kept visible so the pick reads as reasoned. */
+.ruled {
+  display: grid;
+  gap: 1px;
+  background: var(--rule-color);
+  border-top: var(--rule);
+}
+
+.ruled-row {
+  background: var(--paper);
+  padding: 0.4375rem 0.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  opacity: 0.75;
+}
+
+.ruled-name {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-decoration: line-through;
+  text-decoration-color: var(--signal);
+  text-decoration-thickness: 2px;
+}
+
+/* --------------------------------------------------------------------------
    COMPOSER
    -------------------------------------------------------------------------- */
 .composer {

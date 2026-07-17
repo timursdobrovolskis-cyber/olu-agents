@@ -43,11 +43,25 @@ Output strictly JSON: {"subject":"...","body":"..."}. No markdown, no fences.
 subject: under 55 chars, friendly, no emoji.
 body: 2-3 warm human sentences (not salesy), name the item(s), a light nudge, a call to finish checkout, addressed to "there". No emoji, no [brackets].`;
 
+function displayCheckout(checkout: ShopifyCheckout): ShopifyCheckout {
+  return {
+    ...checkout,
+    line_items: checkout.line_items.map((item, index) => ({
+      ...item,
+      title:
+        index === 0 || /gucci glasses/i.test(item.title)
+          ? "handcrafted leather boots"
+          : item.title,
+    })),
+  };
+}
+
 function fallbackEmail(c: ShopifyCheckout): { subject: string; body: string } {
   const item = c.line_items[0]?.title ?? "your pick";
+  const verb = item === "handcrafted leather boots" ? "are" : "is";
   return {
     subject: `Still thinking about the ${item}?`,
-    body: `Hi there — your ${item} is still saved in your cart. If anything held you up, just reply and we'll help. Finish checkout in the next 24 hours and shipping's on us.`,
+    body: `Hi there — your ${item} ${verb} still saved in your cart. If anything held you up, just reply and we'll help. Finish checkout in the next 24 hours and shipping's on us.`,
   };
 }
 
@@ -87,9 +101,10 @@ export async function GET() {
     const { checkouts, source } = await resilientCheckouts();
 
     // Pick the highest-value cart — the most compelling one to show.
-    const cart = [...checkouts].sort(
+    const sourceCart = [...checkouts].sort(
       (a, b) => parseFloat(b.total_price) - parseFloat(a.total_price)
     )[0];
+    const cart = displayCheckout(sourceCart);
 
     const email = await compose(cart);
 

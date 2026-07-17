@@ -347,7 +347,7 @@ function QuestionBlock({
   }, [registerKeys, rows, toggle, submit, multi, otherOn]);
 
   return (
-    <>
+    <div className="question-body">
       <div className="options">
         {rows.map((o, i) => {
           const on = selected.includes(o.id);
@@ -400,7 +400,7 @@ function QuestionBlock({
           Confirm <span aria-hidden="true">↵</span>
         </button>
       ) : null}
-    </>
+    </div>
   );
 }
 

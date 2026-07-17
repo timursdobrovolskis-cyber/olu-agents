@@ -343,6 +343,17 @@ body {
 /* --------------------------------------------------------------------------
    ANSWER BARS
    -------------------------------------------------------------------------- */
+/* One question = one block. The rows, the "Something else" field and Confirm
+   butt directly against each other (they carry border-top: 0), so they must be
+   a single grid child — as three siblings they get spread apart by the
+   column's 1fr track. */
+.question-body {
+  display: grid;
+  align-content: start;
+  align-self: start;
+  min-height: 0;
+}
+
 .options {
   display: grid;
   gap: 2px;

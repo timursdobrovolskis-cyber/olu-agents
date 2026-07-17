@@ -7,8 +7,10 @@ whatever order suits you.
 | Act | Endpoint | When |
 | --- | --- | --- |
 | 1 — intake | `POST /api/recommend` | Once, after the last question |
+| 1 — intake | `POST /api/generate` | Only when they answered "Something else" |
 | 2 — build | `POST /api/build` | Once, when the pitcher hits Build |
 | 2 — chat | `POST /api/chat` | Per message, after the build |
+| 2 — run | `GET /api/run-recovery` | "See it run" — **already built** |
 
 > **Supersedes the deleted `CHAT_CONTRACT.md`.** `/api/chat` exists again, but
 > it is *not* the old conversational front door — it only answers questions
@@ -117,6 +119,48 @@ falls back to and is worth matching in spirit.
 
 **Renaming the three automations is safe** — edit `AUTOMATIONS` and both the UI
 and the routing follow. Only the `id`s are part of this contract.
+
+---
+
+# Act 1 — `POST /api/generate`
+
+**This is the highest-value route to build.** It fires only when the user picks
+"Something else" and types their own answer, and it's what turns the demo from
+"picks one of three" into "invents one for you". If a juror types their real
+problem and the screen writes a build for it, that's the moment worth having.
+
+```jsonc
+// request
+{
+  "field": "Fashion & Apparel",
+  "problems": ["Cart abandonment", "customers never leave reviews"],
+  "product": "One-off purchase",          // OPTIONAL
+  "customText": "customers never leave reviews after buying"
+}
+```
+
+```jsonc
+// response
+{
+  "automation": {
+    "id": "custom",                        // must be exactly "custom"
+    "code": "A/0X",
+    "name": "Review Chaser",
+    "blurb": "One or two sentences, in the pitch's voice."
+  },
+  "steps": [ /* same shape as /api/build — 4-8 of them */ ]
+}
+```
+
+- **`name` is the whole point.** Keep it 2-3 words and title case; it renders at
+  up to 48px. The local fallback deliberately returns a neutral "Custom Build"
+  rather than guessing, because slicing a name out of free text produces things
+  like "Never Leave Agent". Your model should do better than that — if it can't,
+  returning nothing is better than returning nonsense.
+- `id` must be `"custom"`; the frontend keys the generated build off that.
+- `code` shows as the gate numeral — `A/0X` reads well against A/01–A/03.
+- Any failure falls back to `mockGenerate()` in `lib/build.ts`, which quotes the
+  user's text in the blurb and ships a generic 5-step skeleton. Never blocks.
 
 ---
 

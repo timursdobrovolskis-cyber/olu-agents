@@ -47,6 +47,41 @@ export interface BuildResponse {
   steps: BuildStep[];
 }
 
+/** A bespoke automation invented for an answer we don't have a build for. */
+export interface GeneratedAutomation {
+  id: string;
+  code: string;
+  name: string;
+  blurb: string;
+}
+
+/** POST /api/generate request — sent when the user answers "Something else". */
+export interface GenerateRequest {
+  field: string;
+  problems: string[];
+  product?: string;
+  /** The free text they actually typed. This is the whole point of the call. */
+  customText: string;
+}
+
+/** POST /api/generate response. */
+export interface GenerateResponse {
+  automation: GeneratedAutomation;
+  steps: BuildStep[];
+}
+
+export function isGenerateResponse(v: unknown): v is GenerateResponse {
+  const r = v as GenerateResponse;
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof r.automation?.name === "string" &&
+    typeof r.automation?.code === "string" &&
+    Array.isArray(r.steps) &&
+    r.steps.length > 0
+  );
+}
+
 /** POST /api/chat request — scoped to the automation just built. */
 export interface ChatRequest {
   automationId: string;
@@ -178,6 +213,55 @@ export const STEP_LABEL: Record<StepKind, string> = {
   follow: "Follow-up",
   stop: "Stop",
 };
+
+/**
+ * Local stand-in for /api/generate.
+ *
+ * It deliberately does NOT try to name the automation from their text. Naming
+ * free text is a language-model job: slicing words out of "customers never
+ * leave reviews after buying" yields "Never Leave Agent", which is worse than
+ * saying nothing at 48px in front of a room. So the fallback stays neutral and
+ * lets their own words carry the meaning in the blurb; /api/generate does the
+ * naming properly when it exists.
+ */
+export function mockGenerate(req: GenerateRequest): GenerateResponse {
+  const text = req.customText.trim();
+  return {
+    automation: {
+      id: "custom",
+      code: "A/0X",
+      name: "Custom Build",
+      blurb: `Written for what you told us: "${text}". Same spine as the others — watch, decide, act — wired to your case instead of a template.`,
+    },
+    steps: [
+      {
+        kind: "trigger",
+        title: "Watch for the moment",
+        detail: `Fires on the event behind "${text}"`,
+      },
+      {
+        kind: "fetch",
+        title: "Pull the context",
+        detail: "Customer, order history, and whatever you imported",
+      },
+      {
+        kind: "compose",
+        title: "Decide what to do",
+        detail: "Claude reads the situation and drafts the response",
+      },
+      {
+        kind: "dispatch",
+        title: "Act & log",
+        detail: "Sends, records the outcome, learns from the reply",
+      },
+      {
+        kind: "stop",
+        title: "Exit conditions",
+        detail: "Resolved, opted out, or 72h elapsed",
+      },
+    ],
+  };
+}
 
 let seq = 0;
 export function turnId(): string {

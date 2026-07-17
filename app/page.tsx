@@ -6,6 +6,8 @@ import {
   formatBytes,
   isBuildResponse,
   isChatResponse,
+  isGenerateResponse,
+  mockGenerate,
   mockReply,
   skeletonFor,
   STEP_LABEL,
@@ -14,6 +16,8 @@ import {
   type BuildStep,
   type ChatRequest,
   type ChatTurn,
+  type GeneratedAutomation,
+  type GenerateRequest,
   type ImportedFile,
 } from "@/lib/build";
 import {
@@ -25,12 +29,19 @@ import {
   QUESTIONS,
   visibleQuestions,
   type Answers,
+  type Automation,
   type EmailPreview,
   type Question,
   type Recommendation,
   type RecommendRequest,
   type Verdict,
 } from "@/lib/intake";
+import {
+  normaliseUrl,
+  scanSite,
+  SEVERITY_LABEL,
+  type SiteScan,
+} from "@/lib/scan";
 
 type Phase = "intake" | "import" | "building" | "chat";
 
@@ -147,27 +158,85 @@ function SynthesisReactor({
   );
 }
 
-function RuledOutRow({ verdict }: { verdict: Verdict }) {
-  const auto = automationById(verdict.automationId);
+/**
+ * An automation the agent didn't pick — but the jury still can. Choosing is
+ * free; the wallet only opens at Build.
+ */
+function AltRow({
+  verdict,
+  resolve,
+  onPick,
+}: {
+  verdict: Verdict;
+  resolve: (id: string) => Automation | GeneratedAutomation | undefined;
+  onPick: (id: string) => void;
+}) {
+  const auto = resolve(verdict.automationId);
   if (!auto) return null;
   return (
-    <div className="ruled-row">
+    <button
+      type="button"
+      className="ruled-row alt-row"
+      onClick={() => onPick(verdict.automationId)}
+    >
       <span className="label">{auto.code}</span>
       <span>
         <span className="ruled-name">{auto.name}</span>
         <span className="ruled-reason"> — {verdict.reason}</span>
       </span>
-    </div>
+      <span className="alt-pick" aria-hidden="true">
+        Build this →
+      </span>
+    </button>
   );
 }
 
-function VerdictCard({ rec }: { rec: Recommendation }) {
-  const auto = automationById(rec.chosen.automationId);
+function VerdictCard({
+  rec,
+  activeId,
+  custom,
+  resolve,
+  onPick,
+}: {
+  rec: Recommendation;
+  activeId: string;
+  custom: GeneratedAutomation | null;
+  resolve: (id: string) => Automation | GeneratedAutomation | undefined;
+  onPick: (id: string) => void;
+}) {
+  const auto = resolve(activeId);
   if (!auto) return null;
+
+  const isCustom = custom?.id === activeId;
+  const overridden = !isCustom && activeId !== rec.chosen.automationId;
+  const recommended = resolve(rec.chosen.automationId);
+
+  // Everything the jury didn't pick — the agent's choice once overridden, plus
+  // the generated build so they can always get back to it.
+  const alts: Verdict[] = [
+    ...(custom && custom.id !== activeId
+      ? [
+          {
+            automationId: custom.id,
+            score: 0,
+            reason: "Invented for what you typed.",
+          },
+        ]
+      : []),
+    ...(activeId !== rec.chosen.automationId ? [rec.chosen] : []),
+    ...rec.ruledOut.filter((v) => v.automationId !== activeId),
+  ];
+
   return (
     <figure className="verdict" style={{ margin: 0 }}>
       <div className="verdict-head">
-        <span className="label">[ Recommended build ]</span>
+        <span className="label">
+          {isCustom
+            ? "[ Built for you ]"
+            : overridden
+              ? "[ Your pick ]"
+              : "[ Recommended build ]"}
+        </span>
         <span className="label">Olu / D-01</span>
       </div>
       <div className="verdict-body">
@@ -175,15 +244,26 @@ function VerdictCard({ rec }: { rec: Recommendation }) {
         <data className="verdict-gate">{auto.code}</data>
         <h2 className="verdict-name">{auto.name}</h2>
         <p className="verdict-blurb">{auto.blurb}</p>
-        <p className="verdict-reason">{rec.chosen.reason}</p>
+        <p className="verdict-reason">
+          {isCustom
+            ? "No stock build fits what you described, so this one was written for it."
+            : overridden
+              ? `You chose this over ${recommended?.name ?? "the recommendation"}.`
+              : rec.chosen.reason}
+        </p>
       </div>
       <div className="ruled">
         <div className="ruled-row">
-          <span className="label">Declined</span>
-          <span className="label">Scored lower</span>
+          <span className="label">Or build instead</span>
+          <span className="label">Click to switch</span>
         </div>
-        {rec.ruledOut.map((v) => (
-          <RuledOutRow key={v.automationId} verdict={v} />
+        {alts.map((v) => (
+          <AltRow
+            key={v.automationId}
+            verdict={v}
+            resolve={resolve}
+            onPick={onPick}
+          />
         ))}
       </div>
     </figure>
@@ -324,6 +404,98 @@ function QuestionBlock({
   );
 }
 
+/**
+ * Paste a site, see what's missing. The URL is validated for real; the findings
+ * are a local preview rather than a live crawl — see lib/scan.ts for why.
+ */
+function ScanPanel({
+  scan,
+  onScan,
+}: {
+  scan: SiteScan | null;
+  onScan: (s: SiteScan | null) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [bad, setBad] = useState(false);
+
+  const run = useCallback(() => {
+    const host = normaliseUrl(url);
+    if (!host) {
+      setBad(true);
+      return;
+    }
+    setBad(false);
+    setBusy(true);
+    // A beat, so it reads as work rather than a lookup.
+    setTimeout(() => {
+      onScan(scanSite(host));
+      setBusy(false);
+    }, 900);
+  }, [url, onScan]);
+
+  return (
+    <div className="scanzone">
+      <span className="dropzone-title">Or paste your site</span>
+      <span className="label">We&apos;ll show you what&apos;s missing</span>
+      <div className="scan-field">
+        <input
+          className="scan-input"
+          value={url}
+          placeholder="yourstore.com"
+          aria-label="Your website address"
+          inputMode="url"
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setBad(false);
+            if (scan) onScan(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              run();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="scan-btn"
+          onClick={run}
+          disabled={busy || !url.trim()}
+        >
+          {busy ? "…" : "Scan"}
+        </button>
+      </div>
+
+      {bad ? (
+        <span className="scan-bad">Doesn&apos;t look like a web address</span>
+      ) : null}
+
+      {busy ? <span className="label">Reading {url.trim()}…</span> : null}
+
+      {scan && !busy ? (
+        <div className="findings">
+          <div className="findings-head">
+            <span className="label label-ink">[ {scan.domain} ]</span>
+            <span className="label">
+              {scan.findings.filter((f) => f.severity === "gap").length} gaps
+            </span>
+          </div>
+          {scan.findings.map((f) => (
+            <div className={`finding finding-${f.severity}`} key={f.title}>
+              <span className="finding-sev">{SEVERITY_LABEL[f.severity]}</span>
+              <span>
+                <span className="finding-title">{f.title}</span>
+                <span className="finding-detail"> — {f.detail}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** Real drag-and-drop. Files are read for name/size/type and never uploaded. */
 function ImportPanel({
   files,
@@ -331,12 +503,16 @@ function ImportPanel({
   onBuild,
   automationName,
   cost,
+  scan,
+  onScan,
 }: {
   files: ImportedFile[];
   onFiles: (f: ImportedFile[]) => void;
   onBuild: () => void;
   automationName: string;
   cost: number;
+  scan: SiteScan | null;
+  onScan: (s: SiteScan | null) => void;
 }) {
   const [hot, setHot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -356,32 +532,34 @@ function ImportPanel({
 
   return (
     <>
-      <div
-        className={`dropzone ${hot ? "dropzone-hot" : ""}`}
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setHot(true);
-        }}
-        onDragLeave={() => setHot(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setHot(false);
-          take(e.dataTransfer.files);
-        }}
-      >
-        <span className="dropzone-title">Drop your data here</span>
-        <span className="label">
-          Orders · Products · Customers — CSV, XLSX, JSON
-        </span>
-        <span className="option-note">Or click to browse</span>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          hidden
-          onChange={(e) => take(e.target.files)}
-        />
+      <div className="intake-sources">
+        <div
+          className={`dropzone ${hot ? "dropzone-hot" : ""}`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setHot(true);
+          }}
+          onDragLeave={() => setHot(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setHot(false);
+            take(e.dataTransfer.files);
+          }}
+        >
+          <span className="dropzone-title">Drop your data</span>
+          <span className="label">Orders · Products · Customers</span>
+          <span className="option-note">CSV, XLSX, JSON — or click to browse</span>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(e) => take(e.target.files)}
+          />
+        </div>
+
+        <ScanPanel scan={scan} onScan={onScan} />
       </div>
 
       {files.length ? (
@@ -492,8 +670,15 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const [files, setFiles] = useState<ImportedFile[]>([]);
+  const [scan, setScan] = useState<SiteScan | null>(null);
   const [steps, setSteps] = useState<BuildStep[]>([]);
   const [shown, setShown] = useState(0);
+
+  // The jury can override the agent's pick; the wallet only opens at Build.
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  // A bespoke automation invented for a "Something else" answer.
+  const [custom, setCustom] = useState<GeneratedAutomation | null>(null);
+  const [customSteps, setCustomSteps] = useState<BuildStep[] | null>(null);
 
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [replying, setReplying] = useState(false);
@@ -543,7 +728,17 @@ export default function Home() {
   const queue = visibleQuestions(answers);
   const current = queue.find((q) => !isAnswered(q, answers));
   const answered = queue.filter((q) => isAnswered(q, answers));
-  const auto = rec ? automationById(rec.chosen.automationId) : null;
+
+  // A generated automation isn't in the static table, so every lookup goes
+  // through here rather than automationById directly.
+  const resolve = useCallback(
+    (id: string): Automation | GeneratedAutomation | undefined =>
+      custom && custom.id === id ? custom : automationById(id),
+    [custom],
+  );
+
+  const activeId = pickedId ?? rec?.chosen.automationId ?? "";
+  const auto = activeId ? resolve(activeId) : null;
 
   const reset = useCallback(() => {
     asked.current = false;
@@ -563,6 +758,10 @@ export default function Home() {
     setRun(null);
     setRunState("idle");
     setRunStep(0);
+    setPickedId(null);
+    setCustom(null);
+    setCustomSteps(null);
+    setScan(null);
   }, []);
 
   const goBack = useCallback(() => {
@@ -578,6 +777,10 @@ export default function Home() {
     setRun(null);
     setRunState("idle");
     setRunStep(0);
+    setPickedId(null);
+    setCustom(null);
+    setCustomSteps(null);
+    setScan(null);
     setAnswers((prev) => {
       const order = visibleQuestions(prev).filter((q) => isAnswered(q, prev));
       const last = order[order.length - 1];
@@ -645,8 +848,17 @@ export default function Home() {
         : {}),
     };
 
+    // Anything they typed themselves, in their own words. Its presence is what
+    // makes this a generate rather than a lookup.
+    const customText = [answers.field?.other, answers.problems?.other, answers.product?.other]
+      .map((t) => t?.trim())
+      .filter(Boolean)
+      .join("; ");
+
     setDeciding(true);
     (async () => {
+      // No early returns in here: everything below (generate, and the move to
+      // import) has to run on every path, including the 404 one.
       try {
         const res = await fetch("/api/recommend", {
           method: "POST",
@@ -655,34 +867,68 @@ export default function Home() {
         });
         if (res.status === 404) {
           setRec(mockRecommendation(answers));
-          return;
+        } else if (!res.ok) {
+          throw new Error(`Agent returned ${res.status}`);
+        } else {
+          const data: unknown = await res.json();
+          if (!isRecommendation(data)) throw new Error("Malformed response");
+          setRec(data);
         }
-        if (!res.ok) throw new Error(`Agent returned ${res.status}`);
-        const data: unknown = await res.json();
-        if (!isRecommendation(data)) throw new Error("Malformed response");
-        setRec(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "unknown fault");
         setRec(mockRecommendation(answers));
-      } finally {
-        setDeciding(false);
-        setPhase("import");
       }
+
+      // They described something we don't have a build for — invent one, and
+      // make it the headline rather than forcing them into the nearest match.
+      if (customText) {
+        const genReq: GenerateRequest = {
+          field: payload.field.label,
+          problems: payload.problems.map((p) => p.label),
+          product: payload.product?.label,
+          customText,
+        };
+        let generated = mockGenerate(genReq);
+        try {
+          const gres = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(genReq),
+          });
+          if (gres.ok) {
+            const gdata: unknown = await gres.json();
+            if (isGenerateResponse(gdata)) generated = gdata;
+          }
+        } catch {
+          // keep the local invention — this must never block the flow
+        }
+        setCustom(generated.automation);
+        setCustomSteps(generated.steps);
+        setPickedId(generated.automation.id);
+      }
+
+      setDeciding(false);
+      setPhase("import");
     })();
   }, [current, rec, answers]);
 
   const startBuild = useCallback(() => {
-    if (!rec) return;
+    if (!rec || !activeId) return;
     setPhase("building");
     setShown(0);
 
     const payload: BuildRequest = {
-      automationId: rec.chosen.automationId,
+      automationId: activeId,
       files: files.map((f) => ({ name: f.name, size: f.size, kind: f.kind })),
     };
 
     (async () => {
-      let plan = skeletonFor(rec.chosen.automationId);
+      // A generated automation carries its own skeleton; the three standard
+      // builds each have their own in lib/build.ts.
+      let plan =
+        custom && custom.id === activeId && customSteps
+          ? customSteps
+          : skeletonFor(activeId);
       try {
         const res = await fetch("/api/build", {
           method: "POST",
@@ -698,7 +944,7 @@ export default function Home() {
       }
       setSteps(plan);
     })();
-  }, [rec, files]);
+  }, [rec, files, activeId, custom, customSteps]);
 
   // Spend the wallet while the skeleton assembles, so cost and build read as
   // one action. The rate is derived from this skeleton's own length — a fixed
@@ -745,7 +991,7 @@ export default function Home() {
       setReplying(true);
 
       const payload: ChatRequest = {
-        automationId: rec.chosen.automationId,
+        automationId: activeId,
         message: text,
         history,
       };
@@ -777,7 +1023,7 @@ export default function Home() {
         }
       })();
     },
-    [rec, turns, auto],
+    [rec, turns, auto, activeId],
   );
 
   const stageLabel =
@@ -877,6 +1123,8 @@ export default function Home() {
                 onBuild={startBuild}
                 automationName={auto?.name ?? "it"}
                 cost={TOKEN_BALANCE}
+                scan={scan}
+                onScan={setScan}
               />
             ) : phase === "building" ? (
               <SynthesisReactor
@@ -1047,7 +1295,13 @@ export default function Home() {
 
                   {rec ? (
                     <>
-                      <VerdictCard rec={rec} />
+                      <VerdictCard
+                        rec={rec}
+                        activeId={activeId}
+                        custom={custom}
+                        resolve={resolve}
+                        onPick={setPickedId}
+                      />
                       {rec.email ? <EmailStub email={rec.email} /> : null}
                       {error ? (
                         <span className="label">{`/// Routed locally — ${error}`}</span>

@@ -34,6 +34,19 @@ import {
 
 type Phase = "intake" | "import" | "building" | "chat";
 
+interface RunResult {
+  cart: {
+    email: string;
+    items: string;
+    value: string;
+    currency: string;
+    ageLabel: string;
+    source: "shopify" | "mock";
+  };
+  email: { subject: string; body: string };
+  status: "sent";
+}
+
 /** One automation costs one full wallet. */
 const TOKEN_BALANCE = 100;
 /** Delay between skeleton steps appearing. */
@@ -66,6 +79,64 @@ function EmailStub({ email }: { email: EmailPreview }) {
         ))}
       </dl>
     </figure>
+  );
+}
+
+/**
+ * The build moment — calm and legible. Plain-language steps complete one at a
+ * time, then it resolves to the built automation. No flashing, just a clear
+ * "here's what's happening" sequence.
+ */
+function SynthesisReactor({
+  code,
+  name,
+}: {
+  code: string;
+  name: string;
+}) {
+  const TASKS = [
+    "Reading the abandoned cart",
+    "Understanding what to say",
+    "Writing the recovery email",
+    "Wiring the send + follow-up",
+  ];
+  const [done, setDone] = useState(0);
+
+  useEffect(() => {
+    if (done >= TASKS.length) return;
+    const t = setTimeout(() => setDone((n) => n + 1), 620);
+    return () => clearTimeout(t);
+  }, [done, TASKS.length]);
+
+  const complete = done >= TASKS.length;
+
+  return (
+    <div className="synth" aria-hidden="true">
+      <div className="synth-head">
+        <span className="label">[ Building ]</span>
+        <span className="label">{complete ? "Ready" : "Working…"}</span>
+      </div>
+
+      <ol className="synth-tasks">
+        {TASKS.map((t, i) => {
+          const state = i < done ? "done" : i === done ? "active" : "wait";
+          return (
+            <li className={`synth-task synth-task-${state}`} key={t}>
+              <span className="synth-tick">{i < done ? "✓" : "○"}</span>
+              <span>{t}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      {complete ? (
+        <div className="synth-result">
+          <span className="label">[ {code} ]</span>
+          <span className="synth-result-name">{name}</span>
+          <span className="synth-stamp">Built &amp; ready</span>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -421,6 +492,38 @@ export default function Home() {
   const [replying, setReplying] = useState(false);
   const [tokens, setTokens] = useState(TOKEN_BALANCE);
 
+  // "See it run" — plays the built automation once against a real cart.
+  const [run, setRun] = useState<RunResult | null>(null);
+  const [runState, setRunState] = useState<"idle" | "running" | "done">("idle");
+  const [runStep, setRunStep] = useState(0);
+
+  const seeItRun = useCallback(async () => {
+    if (runState === "running") return;
+    setRun(null);
+    setRunState("running");
+    setRunStep(0);
+    let data: RunResult | null = null;
+    try {
+      const res = await fetch("/api/run-recovery");
+      if (res.ok) data = (await res.json()) as RunResult;
+    } catch {
+      // fall through — handled below
+    }
+    // Walk the steps as if the automation is firing, then reveal the result.
+    const total = steps.length || 7;
+    for (let i = 1; i <= total; i++) {
+      await new Promise((r) => setTimeout(r, 260));
+      setRunStep(i);
+    }
+    await new Promise((r) => setTimeout(r, 300));
+    if (data) {
+      setRun(data);
+      setRunState("done");
+    } else {
+      setRunState("idle");
+    }
+  }, [runState, steps.length]);
+
   const asked = useRef(false);
   const questionKeys = useRef<((e: KeyboardEvent) => boolean) | null>(null);
   const registerKeys = useCallback(
@@ -757,11 +860,10 @@ export default function Home() {
                 cost={TOKEN_BALANCE}
               />
             ) : phase === "building" ? (
-              <div className="typing" aria-label="Building">
-                <span className="typing-block" />
-                <span className="typing-block" />
-                <span className="typing-block" />
-              </div>
+              <SynthesisReactor
+                code={auto?.code ?? "D-01"}
+                name={auto?.name ?? "the automation"}
+              />
             ) : phase === "chat" ? (
               <ChatPanel turns={turns} pending={replying} onSend={send} />
             ) : (
@@ -806,17 +908,79 @@ export default function Home() {
                     </div>
                   ) : null}
                   <div className="steps">
-                    {steps.slice(0, shown).map((s, i) => (
-                      <div className={`step step-${s.kind}`} key={i}>
-                        <span className="step-kind">{STEP_LABEL[s.kind]}</span>
-                        <span>
-                          <span className="step-title">{s.title}</span>
-                          <br />
-                          <span className="step-detail">{s.detail}</span>
-                        </span>
-                      </div>
-                    ))}
+                    {steps.slice(0, shown).map((s, i) => {
+                      const firing = runState === "running" && runStep === i + 1;
+                      const ran = runState !== "idle" && runStep > i;
+                      return (
+                        <div
+                          className={`step step-${s.kind} ${firing ? "step-firing" : ""} ${ran ? "step-ran" : ""}`}
+                          key={i}
+                        >
+                          <span className="step-kind">{STEP_LABEL[s.kind]}</span>
+                          <span>
+                            <span className="step-title">{s.title}</span>
+                            <br />
+                            <span className="step-detail">{s.detail}</span>
+                          </span>
+                          {ran ? <span className="step-check">✓</span> : null}
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  {phase === "chat" ? (
+                    <div className="runbox">
+                      {runState === "idle" ? (
+                        <button
+                          type="button"
+                          className="run-btn"
+                          onClick={seeItRun}
+                        >
+                          ▶ See it run — on a real cart
+                        </button>
+                      ) : null}
+
+                      {runState === "running" ? (
+                        <div className="run-status label">
+                          ● Executing on a live abandoned cart…
+                        </div>
+                      ) : null}
+
+                      {runState === "done" && run ? (
+                        <div className="run-result">
+                          <div className="run-cart">
+                            <span className="label">[ Abandoned cart ]</span>
+                            <span className="run-cart-val">{run.cart.value}</span>
+                            <span className="run-cart-items">{run.cart.items}</span>
+                            <span className="label">
+                              {run.cart.email} · {run.cart.ageLabel} ·{" "}
+                              {run.cart.source === "shopify" ? "live Shopify" : "sample"}
+                            </span>
+                          </div>
+
+                          <div className="run-email">
+                            <div className="run-email-head">
+                              <span className="label">[ Email it wrote ]</span>
+                              <span className="label">Claude ✎</span>
+                            </div>
+                            <div className="run-email-subj">{run.email.subject}</div>
+                            <p className="run-email-body">{run.email.body}</p>
+                            <div className="run-sent">
+                              SENT ✓ → {run.cart.email} · logged
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="run-again"
+                            onClick={seeItRun}
+                          >
+                            ↻ Run again
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {files.length ? (
                     <div className="manifest">
                       <div className="manifest-row">

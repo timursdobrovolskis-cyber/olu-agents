@@ -921,3 +921,197 @@ body {
     animation: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   BUILD MOMENT — calm, legible progress (no flashing)
+   -------------------------------------------------------------------------- */
+.synth {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+.synth-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.synth-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.synth-task {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border: var(--rule);
+  background: var(--paper);
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(4px);
+  animation: synth-task-in 0.35s ease forwards;
+}
+@keyframes synth-task-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.synth-task-wait { opacity: 0.4; }
+.synth-task-active { border-color: var(--accent); }
+.synth-task-done { opacity: 0.7; }
+.synth-tick {
+  color: var(--accent);
+  font-weight: 700;
+  width: 1rem;
+  text-align: center;
+}
+
+.synth-result {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  padding: 0.7rem;
+  border: var(--rule-heavy);
+  background: var(--tint);
+  animation: synth-task-in 0.4s ease forwards;
+}
+.synth-result .label { color: var(--rule-color); }
+.synth-result-name {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.synth-stamp {
+  color: var(--paper);
+  background: var(--ink);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synth-task, .synth-result { animation: none; opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   SEE IT RUN — the automation firing on a real cart
+   -------------------------------------------------------------------------- */
+.step-firing {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.step-ran { opacity: 0.62; }
+.step-check {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+.step { position: relative; }
+
+.runbox { display: grid; gap: 0.55rem; margin-top: 0.2rem; }
+
+.run-btn {
+  appearance: none;
+  cursor: pointer;
+  border: var(--rule-heavy);
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.run-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.run-btn:active { transform: translateY(0); }
+
+.run-status {
+  color: var(--rule-color);
+  padding: 0.4rem 0;
+}
+
+.run-result {
+  display: grid;
+  gap: 0.55rem;
+  animation: run-in 0.4s ease;
+}
+@keyframes run-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.run-cart {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border: var(--rule);
+  background: var(--tint);
+}
+.run-cart-val {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.3rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.run-cart-items { font-size: 0.8rem; color: var(--ink); }
+
+.run-email {
+  border: var(--rule-heavy);
+  background: var(--paper);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.4rem;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.run-email-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.run-email-subj {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 0.98rem;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.run-email-body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.run-sent {
+  margin-top: 0.15rem;
+  background: var(--ink);
+  color: var(--accent);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.run-again {
+  justify-self: start;
+  appearance: none;
+  cursor: pointer;
+  border: var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.run-again:hover { background: var(--tint); }
+
+@media (prefers-reduced-motion: reduce) {
+  .step-firing, .run-status, .run-result { animation: none; }
+}

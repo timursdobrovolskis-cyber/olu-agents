@@ -551,6 +551,11 @@ export default function Home() {
     setTurns([]);
     setReplying(false);
     setTokens(TOKEN_BALANCE);
+    // Clear the "See it run" result too, or a second run-through shows the
+    // previous run's cart with no button to fire it live.
+    setRun(null);
+    setRunState("idle");
+    setRunStep(0);
   }, []);
 
   const goBack = useCallback(() => {
@@ -563,6 +568,9 @@ export default function Home() {
     setTurns([]);
     // Stepping back un-buys the automation; the wallet is refunded.
     setTokens(TOKEN_BALANCE);
+    setRun(null);
+    setRunState("idle");
+    setRunStep(0);
     setAnswers((prev) => {
       const order = visibleQuestions(prev).filter((q) => isAnswered(q, prev));
       const last = order[order.length - 1];

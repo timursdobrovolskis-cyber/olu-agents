@@ -14,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Olu — Build Intake",
-  description: "Answer three questions; the agent picks which automation to build.",
+  title: "Agent² — Find & build your store's automation",
+  description: "Agent² reads your store and builds the automation that recovers the most revenue.",
 };
 
 export const viewport: Viewport = {

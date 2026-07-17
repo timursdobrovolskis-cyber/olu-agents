@@ -160,11 +160,11 @@ function LandingScreen({
   return (
     <main className="stage">
       <div className="stub" aria-hidden="true">
-        Olu — Build Intake / Unit D-01
+        Agent² — Build Intake / Unit D-01
       </div>
       <div className="landing">
         <div className="landing-head">
-          <h1 className="landing-title">Olu</h1>
+          <h1 className="landing-title">Agent²</h1>
           <p className="landing-sub">
             The agent that finds what to automate in your store — and builds it.
           </p>
@@ -238,7 +238,7 @@ function SitePanel({
           <div className="verdict-head">
             <span className="label">[ Recommended build ]</span>
             <span className="label">
-              {result.source === "claude" ? "Claude" : "Olu / analysis"}
+              {result.source === "claude" ? "Claude" : "Agent² / analysis"}
             </span>
           </div>
           <div className="verdict-body">
@@ -322,7 +322,7 @@ function VerdictCard({ rec }: { rec: Recommendation }) {
     <figure className="verdict" style={{ margin: 0 }}>
       <div className="verdict-head">
         <span className="label">[ Recommended build ]</span>
-        <span className="label">Olu / D-01</span>
+        <span className="label">Agent² / D-01</span>
       </div>
       <div className="verdict-body">
         <span className="label">Build</span>
@@ -1022,7 +1022,7 @@ export default function Home() {
   return (
     <main className="stage">
       <div className="stub" aria-hidden="true">
-        Olu — Build Intake / Unit D-01
+        Agent² — Build Intake / Unit D-01
       </div>
 
       <div className="stage-main">
@@ -1031,7 +1031,7 @@ export default function Home() {
             <h1 className="stage-title">
               {phase === "chat" ? "Live Build" : "Build Intake"}
             </h1>
-            <span className="label">[ Olu Supply Co. ]</span>
+            <span className="label">[ Agent² ]</span>
           </div>
           <div className="head-right">
             <div

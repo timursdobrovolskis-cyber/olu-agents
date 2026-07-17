@@ -1132,14 +1132,14 @@ body {
 .landing-head { display: grid; gap: 0.6rem; }
 .landing-title {
   font-family: var(--font-archivo-black), sans-serif;
-  font-size: clamp(2.5rem, 7vw, 5rem);
-  color: var(--paper);
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: var(--ink);
   line-height: 0.9;
   margin: 0;
   letter-spacing: -0.02em;
 }
 .landing-sub {
-  color: var(--tint);
+  color: var(--rule-color);
   font-size: clamp(0.95rem, 2vw, 1.2rem);
   max-width: 34ch;
   margin: 0;

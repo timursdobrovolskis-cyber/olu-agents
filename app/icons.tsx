@@ -27,22 +27,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M8 15h8" />
     </>
   ),
-  // Pitched roof
-  home: (
-    <>
-      <path d="M3 11 12 4l9 7" />
-      <path d="M5 11v10h14V11" />
-      <path d="M10 21v-6h4v6" />
-    </>
-  ),
-  // Cup
-  food: (
-    <>
-      <path d="M5 7h12v10l-2 4H7l-2-4V7Z" />
-      <path d="M17 9h3v4h-3" />
-      <path d="M8 3v2M12 3v2" />
-    </>
-  ),
   // Display + cursor
   digital: (
     <>
@@ -94,16 +78,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M14 7h4v4" />
     </>
   ),
-  // Bars under a rule
-  analytics: (
-    <>
-      <path d="M3 20h18" />
-      <path d="M3 20V4" />
-      <rect x="6" y="12" width="3" height="8" />
-      <rect x="11" y="8" width="3" height="12" />
-      <rect x="16" y="15" width="3" height="5" />
-    </>
-  ),
   // Carton
   box: (
     <>
@@ -119,15 +93,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M14 1l3 3-3 3" />
       <path d="M20 12a8 8 0 0 1-8 8H7" />
       <path d="M10 23l-3-3 3-3" />
-    </>
-  ),
-  // Compass / set square
-  bespoke: (
-    <>
-      <path d="M12 3v4" />
-      <path d="M12 7 6 21" />
-      <path d="M12 7l6 14" />
-      <path d="M9 15h6" />
     </>
   ),
   // Facet

@@ -9,28 +9,18 @@ export type IconName =
   | "fashion"
   | "electronics"
   | "beauty"
-  | "home"
-  | "food"
   | "digital"
   | "leads"
   | "gigs"
   | "abandonment"
   | "comms"
   | "forecast"
-  | "analytics"
   | "box"
   | "repeat"
-  | "bespoke"
   | "premium"
   | "other";
 
-export type ProblemId =
-  | "leads"
-  | "gigs"
-  | "abandonment"
-  | "comms"
-  | "forecast"
-  | "analytics";
+export type ProblemId = "leads" | "gigs" | "abandonment" | "comms" | "forecast";
 export type QuestionId = "field" | "problems" | "product";
 
 export interface Option {
@@ -88,14 +78,7 @@ export const AUTOMATIONS: Automation[] = [
     // gigs is deliberately level with Concierge: "not enough work" is fixed by
     // recovering lost checkouts in a shop but by converting enquiries in a
     // service business, so FIELD_BONUS decides rather than this table.
-    weights: {
-      leads: 3,
-      gigs: 2,
-      abandonment: 3,
-      comms: 1,
-      forecast: 0,
-      analytics: 0,
-    },
+    weights: { leads: 3, gigs: 2, abandonment: 3, comms: 1, forecast: 0 },
   },
   {
     id: "concierge",
@@ -103,14 +86,7 @@ export const AUTOMATIONS: Automation[] = [
     name: "Client Concierge",
     blurb:
       "Answers customer questions, chases replies, and keeps every conversation moving without anyone on your side typing.",
-    weights: {
-      leads: 1,
-      gigs: 2,
-      abandonment: 1,
-      comms: 3,
-      forecast: 0,
-      analytics: 1,
-    },
+    weights: { leads: 1, gigs: 2, abandonment: 1, comms: 3, forecast: 0 },
   },
   {
     id: "forecast",
@@ -118,14 +94,7 @@ export const AUTOMATIONS: Automation[] = [
     name: "Forecast Desk",
     blurb:
       "Projects next month's sales from your own history and reports what moved, what stalled, and what to do about it.",
-    weights: {
-      leads: 0,
-      gigs: 0,
-      abandonment: 0,
-      comms: 0,
-      forecast: 3,
-      analytics: 3,
-    },
+    weights: { leads: 0, gigs: 0, abandonment: 0, comms: 0, forecast: 3 },
   },
 ];
 
@@ -133,7 +102,6 @@ export const AUTOMATIONS: Automation[] = [
 const PRODUCT_BONUS: Record<string, Partial<Record<string, number>>> = {
   oneoff: { recovery: 1 },
   subscription: { forecast: 1 },
-  bespoke: { concierge: 1 },
   premium: { concierge: 1 },
 };
 
@@ -145,7 +113,7 @@ const FIELD_BONUS: Record<string, Partial<Record<string, number>>> = {
 export const QUESTIONS: Question[] = [
   {
     id: "field",
-    prompt: "First — which field of e-commerce are you in?",
+    prompt: "What do you sell?",
     kind: "single",
     otherLabel: "Something else",
     options: [
@@ -158,7 +126,7 @@ export const QUESTIONS: Question[] = [
       {
         id: "electronics",
         label: "Electronics & Tech",
-        note: "Devices, components, gadgets",
+        note: "Devices, gadgets, gear",
         icon: "electronics",
       },
       {
@@ -166,18 +134,6 @@ export const QUESTIONS: Question[] = [
         label: "Beauty & Cosmetics",
         note: "Skincare, makeup, fragrance",
         icon: "beauty",
-      },
-      {
-        id: "home",
-        label: "Home & Living",
-        note: "Furniture, decor, kitchen",
-        icon: "home",
-      },
-      {
-        id: "food",
-        label: "Food & Beverage",
-        note: "Groceries, coffee, supplements",
-        icon: "food",
       },
       {
         id: "digital",
@@ -189,20 +145,20 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "problems",
-    prompt: "What's actually hurting right now? Pick everything that applies.",
+    prompt: "What's hurting? Pick everything that applies.",
     kind: "multi",
     otherLabel: "Something else",
     options: [
       {
         id: "leads",
         label: "Leads",
-        note: "Traffic arrives but doesn't convert",
+        note: "Visitors arrive but don't buy",
         icon: "leads",
       },
       {
         id: "gigs",
         label: "Too few gigs",
-        note: "Not enough work coming in at all",
+        note: "Not enough work coming in",
         icon: "gigs",
       },
       {
@@ -213,21 +169,15 @@ export const QUESTIONS: Question[] = [
       },
       {
         id: "comms",
-        label: "Client communication",
-        note: "Replies are slow, threads go cold",
+        label: "Slow client replies",
+        note: "Conversations go cold",
         icon: "comms",
       },
       {
         id: "forecast",
-        label: "No selling forecast",
-        note: "Next month is guesswork",
+        label: "Flying blind",
+        note: "No forecast, no read on progress",
         icon: "forecast",
-      },
-      {
-        id: "analytics",
-        label: "No read on progress",
-        note: "Numbers exist, meaning doesn't",
-        icon: "analytics",
       },
     ],
   },
@@ -235,14 +185,14 @@ export const QUESTIONS: Question[] = [
     id: "product",
     // Only asked when they sell a product; services skip it.
     showIf: (a) => a.field?.selected[0] !== "digital",
-    prompt: "And what kind of product is it?",
+    prompt: "And how do people buy it?",
     kind: "single",
     otherLabel: "Something else",
     options: [
       {
         id: "oneoff",
         label: "One-off purchase",
-        note: "Bought once, occasionally repeated",
+        note: "Bought once, now and then",
         icon: "box",
       },
       {
@@ -250,12 +200,6 @@ export const QUESTIONS: Question[] = [
         label: "Subscription / refill",
         note: "Recurring or replenishable",
         icon: "repeat",
-      },
-      {
-        id: "bespoke",
-        label: "Made to order",
-        note: "Bespoke, handmade, configured",
-        icon: "bespoke",
       },
       {
         id: "premium",

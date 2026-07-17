@@ -47,9 +47,13 @@ Question 3 is **conditional**: it's skipped when `field` is `digital`
 ```
 
 - `problems` is multi-select, so it's an array — possibly with one entry, never
-  empty. Known ids: `leads` | `gigs` | `abandonment` | `comms` | `forecast` |
-  `analytics`.
-- Three of these look alike but aren't. `gigs` is a **demand** problem (nothing
+  empty. Known ids: `leads` | `gigs` | `abandonment` | `comms` | `forecast`.
+  (The former `analytics` id was folded into `forecast` — one "flying blind"
+  option now covers both; don't expect `analytics` anymore.)
+- Known `field` ids: `fashion` | `electronics` | `beauty` | `digital` (`home`
+  and `food` were cut). Known `product` ids: `oneoff` | `subscription` |
+  `premium` (`bespoke` was cut).
+- Three problems look alike but aren't. `gigs` is a **demand** problem (nothing
   coming in), `leads` is a **conversion** problem (traffic that doesn't buy),
   and `abandonment` is a **checkout** problem (reached the cart, then left).
 - `gigs` is deliberately field-sensitive: it points at Cart Recovery for a shop

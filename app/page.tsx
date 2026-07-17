@@ -47,6 +47,13 @@ interface RunResult {
   status: "sent";
 }
 
+/** Plain-language dossier row names — the jury reads these, not our ids. */
+const DOSSIER_LABEL: Record<string, string> = {
+  field: "Business",
+  problems: "Pain points",
+  product: "Product",
+};
+
 /** One automation costs one full wallet. */
 const TOKEN_BALANCE = 100;
 /** Delay between skeleton steps appearing. */
@@ -784,11 +791,16 @@ export default function Home() {
           ? `Building — ${shown} / ${steps.length || "…"}`
           : "Live build";
 
+  // The story in four beats, so the room always knows where we are.
+  const act: number =
+    phase === "intake" && current ? 0 : phase === "import" ? 1 : phase === "building" ? 2 : phase === "chat" ? 3 : 1;
+  const ACTS = ["Ask", "Decide", "Build", "Run"];
+
   const prompt =
     phase === "intake"
       ? current?.prompt ?? "That's everything I need."
       : phase === "import"
-        ? "Import your data so I build this against your real orders — not a guess."
+        ? "Drop in your store data — I'll build against your real orders, not a guess."
         : phase === "building"
           ? `Wiring up ${auto?.name ?? "the automation"}…`
           : `${auto?.name ?? "It"} is built. Talk to it.`;
@@ -805,7 +817,17 @@ export default function Home() {
             <h1 className="stage-title">
               {phase === "chat" ? "Live Build" : "Build Intake"}
             </h1>
-            <span className="label">[ Olu Supply Co. ]</span>
+            <nav className="journey" aria-label="Progress through the demo">
+              {ACTS.map((a, i) => (
+                <span
+                  key={a}
+                  className={`journey-step ${i === act ? "journey-on" : i < act ? "journey-done" : ""}`}
+                >
+                  <span className="journey-num">{i + 1}</span>
+                  {a}
+                </span>
+              ))}
+            </nav>
           </div>
           <div className="head-right">
             <div
@@ -824,17 +846,6 @@ export default function Home() {
                 />
               </span>
             </div>
-            <span
-              className="progress"
-              aria-label={`${answered.length} of ${queue.length} answered`}
-            >
-              {queue.map((q, i) => (
-                <span
-                  key={q.id}
-                  className={`progress-cell ${i < answered.length ? "progress-cell-on" : ""}`}
-                />
-              ))}
-            </span>
             <span className="label status-live">
               <span className="status-dot" aria-hidden="true" />
               Live
@@ -881,7 +892,7 @@ export default function Home() {
             <div className="legend">
               {phase === "intake" ? (
                 <>
-                  <span className="label">[1-7] Select</span>
+                  <span className="label">[1-6] Select</span>
                   <span className="label">[↵] Confirm</span>
                 </>
               ) : (
@@ -895,8 +906,8 @@ export default function Home() {
           <section className="col-dossier" aria-live="polite">
             <span className="label label-ink">
               {phase === "building" || phase === "chat"
-                ? "[ Skeleton ]"
-                : "[ Dossier ]"}
+                ? "[ How it works ]"
+                : "[ What we know ]"}
             </span>
 
             <div
@@ -1011,7 +1022,7 @@ export default function Home() {
                       const done = isAnswered(q, answers);
                       return (
                         <div className="dossier-row" key={q.id}>
-                          <span className="label">{q.id}</span>
+                          <span className="label">{DOSSIER_LABEL[q.id]}</span>
                           <span
                             className={`dossier-value ${done ? "" : "dossier-await"}`}
                           >

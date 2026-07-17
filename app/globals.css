@@ -131,7 +131,7 @@ body {
 
 .head-left {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1.25rem;
   min-width: 0;
 }
@@ -284,22 +284,60 @@ body {
   margin: 0;
 }
 
-.progress {
+/* --------------------------------------------------------------------------
+   JOURNEY — the story in four beats: Ask → Decide → Build → Run.
+   The jury reads this, not the internals.
+   -------------------------------------------------------------------------- */
+.journey {
   display: flex;
-  gap: 5px;
   align-items: center;
+  gap: 0.375rem;
+  flex: none;
 }
 
-.progress-cell {
-  width: 28px;
-  height: 8px;
-  background: var(--paper);
+.journey-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   border: 2px solid var(--rule-color);
+  background: var(--paper);
+  color: var(--rule-color);
+  padding: 0.25rem 0.5rem;
+  font-size: clamp(0.6875rem, 0.75vw, 0.9375rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.progress-cell-on {
+.journey-step:not(:last-child)::after {
+  content: "→";
+  margin-left: 0.5rem;
+  color: var(--rule-color);
+}
+
+.journey-num {
+  display: grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid currentColor;
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+/* Done: quietly ticked off in carbon. */
+.journey-done {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* Now: the one hot cell on the header. */
+.journey-on {
   background: var(--accent);
   border-color: var(--ink);
+  color: var(--ink);
 }
 
 /* --------------------------------------------------------------------------
@@ -320,7 +358,8 @@ body {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  padding: clamp(0.5rem, 0.7vw, 0.875rem) clamp(0.75rem, 1vw, 1.125rem);
+  /* Fewer rows per question now — each one gets room to land. */
+  padding: clamp(0.625rem, 1vh, 1rem) clamp(0.75rem, 1vw, 1.125rem);
   display: grid;
   grid-template-columns: auto auto 1fr auto;
   align-items: center;
@@ -919,6 +958,121 @@ body {
   .typing-block,
   .verdict {
     animation: none;
+  }
+}
+
+/* ==========================================================================
+   MOBILE — one column, page scrolls, touch-first. Applies ONLY under 820px;
+   the desktop console above is untouched.
+   ========================================================================== */
+@media (max-width: 820px) {
+  html,
+  body {
+    overflow: auto; /* the stage scrolls as a page on a phone */
+  }
+
+  .stage {
+    grid-template-columns: 1fr; /* the carbon stub becomes a top strip */
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .stub {
+    writing-mode: horizontal-tb;
+    transform: none;
+    padding: 0.375rem 1rem;
+    letter-spacing: 0.2em;
+    font-size: 0.6875rem;
+    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+  }
+
+  .stage-main {
+    grid-template-rows: auto auto;
+  }
+
+  .stage-head {
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .head-left {
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    width: 100%;
+  }
+
+  .head-right {
+    gap: 0.75rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .journey {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .journey-step {
+    padding: 0.1875rem 0.375rem;
+    font-size: 0.625rem;
+  }
+
+  .journey-step:not(:last-child)::after {
+    margin-left: 0.25rem;
+  }
+
+  .token-bar {
+    width: 48px;
+  }
+
+  /* The two columns stack: questions first, evidence below. */
+  .stage-body {
+    grid-template-columns: 1fr;
+  }
+
+  .col-intake {
+    border-right: 0;
+    border-bottom: var(--rule-heavy);
+    overflow: visible;
+    padding: 1rem;
+    grid-template-rows: none;
+  }
+
+  .col-dossier {
+    overflow: visible;
+    padding: 1rem;
+    grid-template-rows: none;
+  }
+
+  /* No keyboard on a phone — the shortcut legend is noise. */
+  .legend {
+    display: none;
+  }
+
+  .key {
+    display: none; /* number badges point at keys that don't exist */
+  }
+
+  .option {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  /* Chat needs a bounded log so it scrolls inside itself, not the page. */
+  .chat {
+    height: min(65vh, 480px);
+  }
+
+  /* 16px floor stops iOS zooming the page on focus. */
+  .chat-input,
+  .other-input {
+    font-size: 1rem;
+  }
+
+  .dropzone {
+    padding: 1.5rem 1rem;
   }
 }
 

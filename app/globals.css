@@ -1,26 +1,1269 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   COLOUR WAYS — "Jungle Lore" on Swiss Industrial Print (light).
+   Substrate is unbleached paper, never pure white. Do not mix in a dark
+   substrate — the archetype is committed.
+   ========================================================================== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #fef1c6; /* unbleached documentation stock — the substrate */
+  --tint: #cdc696; /* khaki — secondary compartment fill */
+  --rule-color: #4d5a1b; /* olive — hairlines, dividers, metadata ink */
+  --ink: #1e2a0d; /* carbon — primary text and label bars */
+  --accent: #d78b33; /* ochre — THE accent: selection, verdict, dispatch */
+  --signal: #a14345; /* brick — reserved: live status indicator ONLY */
+
+  /* Rules are 2px throughout: 1px hairlines disintegrate on a projector. */
+  --rule: 2px solid var(--rule-color);
+  --rule-heavy: 3px solid var(--ink);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-archivo-black);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+* {
+  border-radius: 0 !important; /* mechanical rigidity: 90° corners only */
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--ink); /* the console sits on a carbon board */
+  color: var(--ink);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* the stage never scrolls as a page */
+}
+
+/* --------------------------------------------------------------------------
+   MICRO-TYPOGRAPHY — sized for the back of the room, not for a phone.
+   Everything scales with vw: the target is 1920x1080 fullscreen, but it must
+   not collapse on a 1280 laptop while rehearsing.
+   -------------------------------------------------------------------------- */
+.label {
+  font-size: clamp(0.75rem, 0.75vw, 0.9375rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rule-color);
+  line-height: 1.2;
+}
+
+.label-ink {
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   INDUSTRIAL MARKERS
+   -------------------------------------------------------------------------- */
+.stub {
+  background: var(--ink);
+  color: var(--paper);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: grid;
+  place-items: center;
+  padding: 1rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stub-accent {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.barcode {
+  height: 1.375rem;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 2px,
+    transparent 2px 5px,
+    var(--ink) 5px 8px,
+    transparent 8px 10px,
+    var(--ink) 10px 12px,
+    transparent 12px 16px
+  );
+}
+
+.dots {
+  height: 1rem;
+  background-image: radial-gradient(var(--rule-color) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+}
+
+/* --------------------------------------------------------------------------
+   STAGE — landscape console, presenter-driven
+   -------------------------------------------------------------------------- */
+.stage {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  height: 100dvh;
+  width: 100%;
+  background: var(--paper);
+  border: var(--rule-heavy);
+  overflow: hidden;
+}
+
+.stage-main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  min-height: 0;
+}
+
+.stage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: var(--rule-heavy);
+  background: var(--paper);
+}
+
+.head-left {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.stage-title {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1.75rem, 3.2vw, 3.75rem);
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: none;
+}
+
+.status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--signal);
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  animation: pulse 2s steps(2, end) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.15;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --------------------------------------------------------------------------
+   TOKENS — the wallet. One automation costs the lot.
+   -------------------------------------------------------------------------- */
+.tokens {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border: var(--rule-heavy);
+  padding: 0.25rem 0.5rem;
+  background: var(--paper);
+  flex: none;
+}
+
+.token-value {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.25rem, 1.7vw, 2.125rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  /* Tabular + fixed width: the header must not jitter as 100 ticks to 0. */
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+
+.token-bar {
+  width: clamp(60px, 6vw, 120px);
+  height: 12px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  flex: none;
+}
+
+.token-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Spent: the wallet reads as an alert, not as a quantity. */
+.tokens-spent {
+  border-color: var(--signal);
+}
+
+.tokens-spent .token-value {
+  color: var(--signal);
+}
+
+.tokens-spent .token-bar {
+  border-color: var(--signal);
+}
+
+.reset {
+  border: var(--rule);
+  background: var(--paper);
+  color: var(--rule-color);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.375rem 0.625rem;
+  cursor: pointer;
+}
+
+.reset:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+/* Two columns: the interaction on the left, the picture it builds on the right. */
+.stage-body {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  min-height: 0;
+}
+
+.col-intake {
+  border-right: var(--rule-heavy);
+  padding: 1.25rem;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.875rem;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.col-dossier {
+  background: var(--tint);
+  padding: clamp(0.75rem, 0.9vw, 1.125rem);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.625rem;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* --------------------------------------------------------------------------
+   PROMPT — the agent's question, sized to read from the back
+   -------------------------------------------------------------------------- */
+.prompt {
+  border-left: 6px solid var(--accent);
+  padding-left: 0.875rem;
+  font-size: clamp(1.25rem, 2vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.progress {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.progress-cell {
+  width: 28px;
+  height: 8px;
+  background: var(--paper);
+  border: 2px solid var(--rule-color);
+}
+
+.progress-cell-on {
+  background: var(--accent);
+  border-color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   ANSWER BARS
+   -------------------------------------------------------------------------- */
+.options {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color); /* gap renders the rules between rows */
+  border: var(--rule-heavy);
+  align-content: start;
+}
+
+.option {
+  background: var(--paper);
+  color: var(--ink);
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: clamp(0.5rem, 0.7vw, 0.875rem) clamp(0.75rem, 1vw, 1.125rem);
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: clamp(0.75rem, 1vw, 1.25rem);
+  min-width: 0;
+}
+
+.option:hover {
+  background: var(--tint);
+}
+
+.option-on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.option-on:hover {
+  background: var(--ink);
+}
+
+/* The keyboard shortcut, shown so the audience sees deliberate control. */
+.key {
+  width: clamp(1.75rem, 1.8vw, 2.25rem);
+  height: clamp(1.75rem, 1.8vw, 2.25rem);
+  border: 2px solid currentColor;
+  display: grid;
+  place-items: center;
+  font-size: clamp(0.8125rem, 0.85vw, 1.0625rem);
+  font-weight: 800;
+  flex: none;
+}
+
+.option-on .key {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.option-icon {
+  width: clamp(2.5rem, 2.6vw, 3.25rem);
+  height: clamp(2.5rem, 2.6vw, 3.25rem);
+  border: 2px solid currentColor;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.option-icon svg {
+  width: 60%;
+  height: 60%;
+}
+
+.option-on .option-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.option-text {
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+
+.option-label {
+  font-size: clamp(1.0625rem, 1.25vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.option-note {
+  font-size: clamp(0.75rem, 0.85vw, 1rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rule-color);
+  line-height: 1.25;
+}
+
+.option-on .option-note {
+  color: var(--tint);
+}
+
+.option-mark {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  flex: none;
+}
+
+.option-on .option-mark {
+  color: var(--accent);
+}
+
+.other-field {
+  display: grid;
+  border: var(--rule-heavy);
+  border-top: 0;
+  background: var(--paper);
+}
+
+.other-input {
+  background: transparent;
+  border: 0;
+  padding: 0.75rem;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: clamp(1.0625rem, 1.25vw, 1.5rem);
+  outline: none;
+}
+
+.other-input::placeholder {
+  color: var(--rule-color);
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.16em;
+}
+
+.other-input:focus-visible {
+  background: var(--tint);
+}
+
+.confirm {
+  border: var(--rule-heavy);
+  border-top: 0;
+  background: var(--accent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.confirm:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.confirm:disabled {
+  background: var(--tint);
+  color: var(--rule-color);
+  cursor: not-allowed;
+}
+
+/* Keyboard legend, pinned at the foot of the intake column. */
+.legend {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  border-top: var(--rule);
+  padding-top: 0.625rem;
+}
+
+/* --------------------------------------------------------------------------
+   DOSSIER — the picture the agent builds, filling in live
+   -------------------------------------------------------------------------- */
+.dossier {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color);
+  border: var(--rule-heavy);
+  align-content: start;
+}
+
+.dossier-row {
+  background: var(--paper);
+  padding: 0.4375rem 0.75rem;
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+
+.dossier-value {
+  font-size: clamp(1rem, 1.15vw, 1.375rem);
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.dossier-await {
+  color: var(--rule-color);
+  font-weight: 400;
+}
+
+/* --------------------------------------------------------------------------
+   VERDICT — the recommended build, issued as a gate card
+   -------------------------------------------------------------------------- */
+.verdict {
+  border: var(--rule-heavy);
+  background: var(--paper);
+  display: grid;
+  animation: boot 200ms steps(3, end);
+}
+
+@keyframes boot {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.verdict-head {
+  background: var(--accent);
+  color: var(--ink);
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.verdict-head .label {
+  color: inherit;
+}
+
+.verdict-body {
+  padding: 0.625rem 0.75rem;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.verdict-gate {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(3rem, 6.5vw, 7rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.8;
+  margin: 0;
+}
+
+.verdict-name {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1.5rem, 2.8vw, 3rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.verdict-blurb {
+  font-size: clamp(0.9375rem, 1vw, 1.25rem);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.verdict-reason {
+  border-left: 5px solid var(--accent);
+  padding-left: 0.625rem;
+  font-size: clamp(0.875rem, 0.95vw, 1.125rem);
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+/* Act two keeps the verdict on screen, but the full card is act one's payoff. */
+.verdict-slim {
+  border: var(--rule-heavy);
+  background: var(--accent);
+  color: var(--ink);
+  padding: 0.4375rem 0.75rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: none;
+}
+
+.verdict-slim .label {
+  color: inherit;
+}
+
+.verdict-slim-name {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1rem, 1.4vw, 1.5rem);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.ruled {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color);
+  border-top: var(--rule);
+}
+
+.ruled-row {
+  background: var(--paper);
+  padding: 0.5rem 0.75rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.ruled-name {
+  font-size: clamp(0.9375rem, 1vw, 1.1875rem);
+  font-weight: 700;
+  text-decoration: line-through;
+  text-decoration-color: var(--signal);
+  text-decoration-thickness: 3px;
+}
+
+.ruled-reason {
+  font-size: clamp(0.75rem, 0.8vw, 0.9375rem);
+  color: var(--rule-color);
+  line-height: 1.3;
+}
+
+/* --------------------------------------------------------------------------
+   EMAIL — dispatch stub
+   -------------------------------------------------------------------------- */
+.email-panel {
+  border: var(--rule-heavy);
+  background: var(--paper);
+  display: grid;
+}
+
+.email-head {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.email-head .label {
+  color: inherit;
+}
+
+.email-rows {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color);
+}
+
+.email-row {
+  background: var(--paper);
+  padding: 0.5rem 0.75rem;
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.email-value {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.email-foot {
+  border-top: var(--rule);
+  padding: 0.375rem 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   IMPORT — the drop zone and its manifest
+   -------------------------------------------------------------------------- */
+.dropzone {
+  border: 3px dashed var(--rule-color);
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+  gap: 0.5rem;
+  padding: clamp(1rem, 2.5vh, 2rem);
+  text-align: center;
+  cursor: pointer;
+  min-height: 0;
+}
+
+.dropzone:hover,
+.dropzone-hot {
+  border-color: var(--ink);
+  border-style: solid;
+  background: var(--tint);
+}
+
+.dropzone-hot {
+  border-color: var(--accent);
+}
+
+.dropzone-title {
+  font-family: var(--font-archivo-black), system-ui, sans-serif;
+  font-size: clamp(1.125rem, 1.6vw, 1.75rem);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.manifest {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color);
+  border: var(--rule-heavy);
+  align-content: start;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.manifest-row {
+  background: var(--paper);
+  padding: 0.4375rem 0.75rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.manifest-name {
+  font-size: clamp(0.875rem, 0.95vw, 1.125rem);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   SKELETON — the build manifest, filling in step by step
+   -------------------------------------------------------------------------- */
+.steps {
+  display: grid;
+  gap: 2px;
+  background: var(--rule-color);
+  border: var(--rule-heavy);
+  align-content: start;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.step {
+  background: var(--paper);
+  padding: 0.4375rem 0.75rem;
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  min-width: 0;
+  animation: boot 160ms steps(3, end);
+}
+
+.step-kind {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.1875rem 0.375rem;
+  text-align: center;
+  font-size: clamp(0.625rem, 0.7vw, 0.8125rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.step-stop .step-kind {
+  background: var(--signal);
+}
+
+.step-dispatch .step-kind,
+.step-trigger .step-kind {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.step-title {
+  font-size: clamp(0.875rem, 0.95vw, 1.125rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.step-detail {
+  font-size: clamp(0.6875rem, 0.78vw, 0.875rem);
+  color: var(--rule-color);
+  line-height: 1.3;
+}
+
+/* --------------------------------------------------------------------------
+   CHAT — talking to the agent about what it built
+   -------------------------------------------------------------------------- */
+.chat {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  border: var(--rule-heavy);
+  background: var(--paper);
+  min-height: 0;
+}
+
+.chat-log {
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.turn {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 88%;
+}
+
+.turn-user {
+  justify-self: end;
+}
+
+.turn-agent {
+  justify-self: start;
+}
+
+.turn-body {
+  border: 2px solid var(--rule-color);
+  border-left: 5px solid var(--accent);
+  padding: 0.5rem 0.625rem;
+  font-size: clamp(0.875rem, 0.95vw, 1.125rem);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.turn-user .turn-body {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.chat-composer {
+  border-top: var(--rule-heavy);
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.chat-input {
+  background: transparent;
+  border: 0;
+  padding: 0.75rem;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: clamp(0.9375rem, 1vw, 1.1875rem);
+  resize: none;
+  outline: none;
+  max-height: 5rem;
+}
+
+.chat-input::placeholder {
+  color: var(--rule-color);
+  text-transform: uppercase;
+  font-size: clamp(0.6875rem, 0.75vw, 0.875rem);
+  letter-spacing: 0.16em;
+}
+
+.chat-input:focus-visible {
+  background: var(--tint);
+}
+
+/* --------------------------------------------------------------------------
+   TYPING — the agent deciding
+   -------------------------------------------------------------------------- */
+.typing {
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: center;
+  padding: 0.875rem;
+  border: var(--rule-heavy);
+  background: var(--paper);
+  width: fit-content;
+  height: fit-content;
+  align-self: start;
+}
+
+.typing-block {
+  width: 11px;
+  height: 18px;
+  background: var(--accent);
+  animation: blocks 1.05s steps(2, end) infinite;
+}
+
+.typing-block:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.typing-block:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes blocks {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot,
+  .typing-block,
+  .verdict {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   BUILD MOMENT — calm, legible progress (no flashing)
+   -------------------------------------------------------------------------- */
+.synth {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+.synth-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.synth-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.synth-task {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border: var(--rule);
+  background: var(--paper);
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(4px);
+  animation: synth-task-in 0.35s ease forwards;
+}
+@keyframes synth-task-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.synth-task-wait { opacity: 0.4; }
+.synth-task-active { border-color: var(--accent); }
+.synth-task-done { opacity: 0.7; }
+.synth-tick {
+  color: var(--accent);
+  font-weight: 700;
+  width: 1rem;
+  text-align: center;
+}
+
+.synth-result {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  padding: 0.7rem;
+  border: var(--rule-heavy);
+  background: var(--tint);
+  animation: synth-task-in 0.4s ease forwards;
+}
+.synth-result .label { color: var(--rule-color); }
+.synth-result-name {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.synth-stamp {
+  color: var(--paper);
+  background: var(--ink);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synth-task, .synth-result { animation: none; opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   SEE IT RUN — the automation firing on a real cart
+   -------------------------------------------------------------------------- */
+.step-firing {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.step-ran { opacity: 0.62; }
+.step-check {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+.step { position: relative; }
+
+.runbox { display: grid; gap: 0.55rem; margin-top: 0.2rem; }
+
+.run-btn {
+  appearance: none;
+  cursor: pointer;
+  border: var(--rule-heavy);
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.run-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.run-btn:active { transform: translateY(0); }
+
+.run-status {
+  color: var(--rule-color);
+  padding: 0.4rem 0;
+}
+
+.run-result {
+  display: grid;
+  gap: 0.55rem;
+  animation: run-in 0.4s ease;
+}
+@keyframes run-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.run-cart {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border: var(--rule);
+  background: var(--tint);
+}
+.run-cart-val {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.3rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.run-cart-items { font-size: 0.8rem; color: var(--ink); }
+
+.run-email {
+  border: var(--rule-heavy);
+  background: var(--paper);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.4rem;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.run-email-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.run-email-subj {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 0.98rem;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.run-email-body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.run-sent {
+  margin-top: 0.15rem;
+  background: var(--ink);
+  color: var(--accent);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.run-again {
+  justify-self: start;
+  appearance: none;
+  cursor: pointer;
+  border: var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.run-again:hover { background: var(--tint); }
+
+@media (prefers-reduced-motion: reduce) {
+  .step-firing, .run-status, .run-result { animation: none; }
+}
+
+/* --------------------------------------------------------------------------
+   LANDING — two-path chooser
+   -------------------------------------------------------------------------- */
+.landing {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+}
+.landing-head { display: grid; gap: 0.6rem; }
+.landing-title {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: var(--ink);
+  line-height: 0.9;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.landing-sub {
+  color: var(--rule-color);
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  max-width: 34ch;
+  margin: 0;
+}
+.landing-paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+.path-card {
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  background: var(--paper);
+  border: var(--rule-heavy);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.path-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 12px 12px 0 var(--accent);
+}
+.path-card:active { transform: translate(0, 0); box-shadow: 6px 6px 0 var(--accent); }
+.path-name {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.5rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.path-note { color: var(--rule-color); font-size: 0.85rem; line-height: 1.45; }
+.path-go {
+  margin-top: 0.3rem;
+  color: var(--ink);
+  background: var(--accent);
+  justify-self: start;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+/* --------------------------------------------------------------------------
+   SITE PANEL — URL analysis (Path A)
+   -------------------------------------------------------------------------- */
+.site-form { display: grid; gap: 0.9rem; }
+.site-field { display: grid; gap: 0.35rem; }
+.site-analyzing { display: grid; gap: 0.8rem; align-content: start; }
+.site-result { display: grid; gap: 0.9rem; }
+.site-readout {
+  border: var(--rule-heavy);
+  background: color-mix(in srgb, var(--paper) 88%, var(--accent));
+}
+.site-readout-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.65rem 0.75rem;
+  border-bottom: var(--rule);
+}
+.site-readout-title {
+  overflow: hidden;
+  font-weight: 750;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.site-evidence-item {
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border-bottom: var(--rule);
+}
+.site-evidence-item:nth-child(odd) { border-right: var(--rule); }
+.site-evidence-item dd {
+  margin: 0.22rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.site-products { padding: 0.7rem 0.75rem 0.75rem; }
+.site-product-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.site-product {
+  max-width: 100%;
+  padding: 0.28rem 0.45rem;
+  overflow: hidden;
+  border: var(--rule);
+  background: var(--paper);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-summary {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.site-error {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: var(--rule);
+  border-color: var(--signal);
+}
+
+@media (max-width: 560px) {
+  .site-readout-head { display: grid; gap: 0.3rem; }
+  .site-readout-title { text-align: left; }
+  .site-evidence { grid-template-columns: 1fr; }
+  .site-evidence-item:nth-child(odd) { border-right: 0; }
 }

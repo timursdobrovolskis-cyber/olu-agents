@@ -1,4 +1,13 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agent² cart recovery demo
+
+Agent² analyzes an online store, recommends the highest-value automation, builds
+the workflow, and demonstrates it against an abandoned cart. The first demo
+automation is Cart Recovery.
+
+The website-analysis path works without API keys. It fetches the public
+storefront on the server and reads metadata, commerce platform signatures,
+JSON-LD product data, visible product links, and price signals. An optional
+Anthropic key improves the analysis wording; it is not required for the result.
 
 ## Getting Started
 
@@ -16,7 +25,8 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `.env.local.example` to `.env.local` only if you want live Shopify,
+Anthropic, or Resend integrations. The URL analyzer itself needs no credentials.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

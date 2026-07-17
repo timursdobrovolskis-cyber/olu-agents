@@ -1115,3 +1115,92 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .step-firing, .run-status, .run-result { animation: none; }
 }
+
+/* --------------------------------------------------------------------------
+   LANDING — two-path chooser
+   -------------------------------------------------------------------------- */
+.landing {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+}
+.landing-head { display: grid; gap: 0.6rem; }
+.landing-title {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  color: var(--paper);
+  line-height: 0.9;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.landing-sub {
+  color: var(--tint);
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  max-width: 34ch;
+  margin: 0;
+}
+.landing-paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+.path-card {
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  background: var(--paper);
+  border: var(--rule-heavy);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.path-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 12px 12px 0 var(--accent);
+}
+.path-card:active { transform: translate(0, 0); box-shadow: 6px 6px 0 var(--accent); }
+.path-name {
+  font-family: var(--font-archivo-black), sans-serif;
+  font-size: 1.5rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.path-note { color: var(--rule-color); font-size: 0.85rem; line-height: 1.45; }
+.path-go {
+  margin-top: 0.3rem;
+  color: var(--ink);
+  background: var(--accent);
+  justify-self: start;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+/* --------------------------------------------------------------------------
+   SITE PANEL — URL analysis (Path A)
+   -------------------------------------------------------------------------- */
+.site-form { display: grid; gap: 0.9rem; }
+.site-field { display: grid; gap: 0.35rem; }
+.site-analyzing { display: grid; gap: 0.8rem; align-content: start; }
+.site-result { display: grid; gap: 0.9rem; }
+.site-summary {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.site-error {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: var(--rule);
+  border-color: var(--signal);
+}

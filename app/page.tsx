@@ -47,6 +47,16 @@ interface RunResult {
   status: "sent";
 }
 
+type Entry = "landing" | "manual" | "site";
+
+interface SiteAnalysis {
+  store: { url: string; title: string; platform: string; sells: string[] };
+  summary: string;
+  recommendation: { automationId: "recovery"; name: string; reason: string };
+  source: "claude" | "scripted";
+  concerns: string;
+}
+
 /** One automation costs one full wallet. */
 const TOKEN_BALANCE = 100;
 /** Delay between skeleton steps appearing. */
@@ -134,6 +144,157 @@ function SynthesisReactor({
           <span className="label">[ {code} ]</span>
           <span className="synth-result-name">{name}</span>
           <span className="synth-stamp">Built &amp; ready</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LandingScreen({
+  onManual,
+  onSite,
+}: {
+  onManual: () => void;
+  onSite: () => void;
+}) {
+  return (
+    <main className="stage">
+      <div className="stub" aria-hidden="true">
+        Olu — Build Intake / Unit D-01
+      </div>
+      <div className="landing">
+        <div className="landing-head">
+          <h1 className="landing-title">Olu</h1>
+          <p className="landing-sub">
+            The agent that finds what to automate in your store — and builds it.
+          </p>
+        </div>
+        <div className="landing-paths">
+          <button type="button" className="path-card" onClick={onSite}>
+            <span className="label">Path A · Automated</span>
+            <span className="path-name">Analyze my website</span>
+            <span className="path-note">
+              Paste your store URL. The agent reads the live site, works out what
+              you sell, and finds the highest-value automation.
+            </span>
+            <span className="path-go">Paste a URL →</span>
+          </button>
+          <button type="button" className="path-card" onClick={onManual}>
+            <span className="label">Path B · Manual</span>
+            <span className="path-name">Describe my store</span>
+            <span className="path-note">
+              Answer three quick questions and the agent routes you to the right
+              automation.
+            </span>
+            <span className="path-go">Answer questions →</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SitePanel({
+  url,
+  concerns,
+  onUrl,
+  onConcerns,
+  onAnalyze,
+  analyzing,
+  result,
+  error,
+  onProceed,
+  onManual,
+}: {
+  url: string;
+  concerns: string;
+  onUrl: (v: string) => void;
+  onConcerns: (v: string) => void;
+  onAnalyze: () => void;
+  analyzing: boolean;
+  result: SiteAnalysis | null;
+  error: string | null;
+  onProceed: () => void;
+  onManual: () => void;
+}) {
+  if (analyzing) {
+    return (
+      <div className="site-analyzing">
+        <div className="typing" aria-label="Analyzing">
+          <span className="typing-block" />
+          <span className="typing-block" />
+          <span className="typing-block" />
+        </div>
+        <span className="label">Reading the site & sizing up the store…</span>
+      </div>
+    );
+  }
+
+  if (result) {
+    return (
+      <div className="site-result">
+        <p className="site-summary">{result.summary}</p>
+        <figure className="verdict" style={{ margin: 0 }}>
+          <div className="verdict-head">
+            <span className="label">[ Recommended build ]</span>
+            <span className="label">
+              {result.source === "claude" ? "Claude" : "Olu / analysis"}
+            </span>
+          </div>
+          <div className="verdict-body">
+            <span className="label">Build</span>
+            <h2 className="verdict-name">{result.recommendation.name}</h2>
+            <p className="verdict-reason">{result.recommendation.reason}</p>
+          </div>
+        </figure>
+        <button type="button" className="confirm" onClick={onProceed}>
+          Set up Cart Recovery <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="site-form">
+      <label className="site-field">
+        <span className="label">Store URL</span>
+        <input
+          className="other-input"
+          type="url"
+          value={url}
+          placeholder="https://your-store.com"
+          onChange={(e) => onUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && url.trim()) onAnalyze();
+          }}
+        />
+      </label>
+      <label className="site-field">
+        <span className="label">What feels off? (optional)</span>
+        <input
+          className="other-input"
+          value={concerns}
+          placeholder="e.g. people add to cart but don't buy"
+          onChange={(e) => onConcerns(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && url.trim()) onAnalyze();
+          }}
+        />
+      </label>
+      <button
+        type="button"
+        className="confirm"
+        disabled={!url.trim()}
+        onClick={onAnalyze}
+      >
+        Analyze my store <span aria-hidden="true">→</span>
+      </button>
+      {error ? (
+        <div className="site-error">
+          <span className="label">{error}</span>
+          <button type="button" className="run-again" onClick={onManual}>
+            Describe it manually instead →
+          </button>
         </div>
       ) : null}
     </div>
@@ -478,11 +639,19 @@ function ChatPanel({
 /* -------------------------------------------------------------------------- */
 
 export default function Home() {
+  const [entry, setEntry] = useState<Entry>("landing");
   const [answers, setAnswers] = useState<Answers>({});
   const [rec, setRec] = useState<Recommendation | null>(null);
   const [phase, setPhase] = useState<Phase>("intake");
   const [deciding, setDeciding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Path A — analyze a real website.
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteConcerns, setSiteConcerns] = useState("");
+  const [siteResult, setSiteResult] = useState<SiteAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [siteError, setSiteError] = useState<string | null>(null);
 
   const [files, setFiles] = useState<ImportedFile[]>([]);
   const [steps, setSteps] = useState<BuildStep[]>([]);
@@ -540,6 +709,7 @@ export default function Home() {
 
   const reset = useCallback(() => {
     asked.current = false;
+    setEntry("landing");
     setAnswers({});
     setRec(null);
     setError(null);
@@ -551,6 +721,43 @@ export default function Home() {
     setTurns([]);
     setReplying(false);
     setTokens(TOKEN_BALANCE);
+    setSiteUrl("");
+    setSiteConcerns("");
+    setSiteResult(null);
+    setAnalyzing(false);
+    setSiteError(null);
+  }, []);
+
+  const analyzeSite = useCallback(async () => {
+    if (!siteUrl.trim()) return;
+    setSiteError(null);
+    setSiteResult(null);
+    setAnalyzing(true);
+    try {
+      const res = await fetch("/api/analyze-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: siteUrl.trim(), concerns: siteConcerns }),
+      });
+      const data = await res.json();
+      if (!res.ok) setSiteError(data.error ?? "Couldn't analyze that site.");
+      else setSiteResult(data as SiteAnalysis);
+    } catch {
+      setSiteError("Couldn't reach the analyzer. Try again, or describe it manually.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [siteUrl, siteConcerns]);
+
+  // Both paths converge here: route to Cart Recovery and enter the build flow.
+  const proceedToRecovery = useCallback(() => {
+    const recoveryAnswers: Answers = {
+      field: { selected: ["fashion"] },
+      problems: { selected: ["abandonment"] },
+      product: { selected: ["oneoff"] },
+    };
+    setRec(mockRecommendation(recoveryAnswers));
+    setPhase("import");
   }, []);
 
   const goBack = useCallback(() => {
@@ -765,8 +972,15 @@ export default function Home() {
     [rec, turns, auto],
   );
 
-  const stageLabel =
-    phase === "intake"
+  const siteIntake = entry === "site" && phase === "intake";
+
+  const stageLabel = siteIntake
+    ? siteResult
+      ? "Analysis / Verdict"
+      : analyzing
+        ? "Analyzing…"
+        : "Website / Step 1 of 1"
+    : phase === "intake"
       ? current
         ? `Question ${answered.length + 1} / ${queue.length}`
         : "Deciding"
@@ -776,14 +990,26 @@ export default function Home() {
           ? `Building — ${shown} / ${steps.length || "…"}`
           : "Live build";
 
-  const prompt =
-    phase === "intake"
+  const prompt = siteIntake
+    ? siteResult
+      ? "Here's what I found — and where the money's leaking."
+      : "Paste your store's URL and I'll read the live site."
+    : phase === "intake"
       ? current?.prompt ?? "That's everything I need."
       : phase === "import"
         ? "Import your data so I build this against your real orders — not a guess."
         : phase === "building"
           ? `Wiring up ${auto?.name ?? "the automation"}…`
           : `${auto?.name ?? "It"} is built. Talk to it.`;
+
+  if (entry === "landing") {
+    return (
+      <LandingScreen
+        onManual={() => setEntry("manual")}
+        onSite={() => setEntry("site")}
+      />
+    );
+  }
 
   return (
     <main className="stage">
@@ -842,7 +1068,23 @@ export default function Home() {
             <span className="label">{stageLabel}</span>
             <p className="prompt">{prompt}</p>
 
-            {phase === "intake" && current ? (
+            {entry === "site" && phase === "intake" ? (
+              <SitePanel
+                url={siteUrl}
+                concerns={siteConcerns}
+                onUrl={setSiteUrl}
+                onConcerns={setSiteConcerns}
+                onAnalyze={analyzeSite}
+                analyzing={analyzing}
+                result={siteResult}
+                error={siteError}
+                onProceed={proceedToRecovery}
+                onManual={() => {
+                  setSiteError(null);
+                  setEntry("manual");
+                }}
+              />
+            ) : phase === "intake" && current ? (
               <QuestionBlock
                 key={current.id}
                 question={current}

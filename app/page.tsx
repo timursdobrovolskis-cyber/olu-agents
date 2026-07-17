@@ -50,10 +50,19 @@ interface RunResult {
 type Entry = "landing" | "manual" | "site";
 
 interface SiteAnalysis {
-  store: { url: string; title: string; platform: string; sells: string[] };
+  store: {
+    url: string;
+    title: string;
+    description: string;
+    platform: string;
+    category: string;
+    sells: string[];
+    priceSignal: string;
+  };
+  evidence: Array<{ label: string; value: string }>;
   summary: string;
   recommendation: { automationId: "recovery"; name: string; reason: string };
-  source: "claude" | "scripted";
+  source: "ai" | "signals";
   concerns: string;
 }
 
@@ -219,13 +228,13 @@ function SitePanel({
 }) {
   if (analyzing) {
     return (
-      <div className="site-analyzing">
+      <div className="site-analyzing" role="status">
         <div className="typing" aria-label="Analyzing">
           <span className="typing-block" />
           <span className="typing-block" />
           <span className="typing-block" />
         </div>
-        <span className="label">Reading the site & sizing up the store…</span>
+        <span className="label">Fetching the live storefront &amp; reading product signals…</span>
       </div>
     );
   }
@@ -233,12 +242,38 @@ function SitePanel({
   if (result) {
     return (
       <div className="site-result">
+        <section className="site-readout" aria-label="Signals found on the live store">
+          <div className="site-readout-head">
+            <span className="label">[ Live store read ]</span>
+            <span className="site-readout-title">{result.store.title}</span>
+          </div>
+          <dl className="site-evidence">
+            {result.evidence.map((item) => (
+              <div className="site-evidence-item" key={item.label}>
+                <dt className="label">{item.label}</dt>
+                <dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+          {result.store.sells.length ? (
+            <div className="site-products">
+              <span className="label">Products seen</span>
+              <div className="site-product-list">
+                {result.store.sells.slice(0, 5).map((product) => (
+                  <span className="site-product" key={product}>
+                    {product}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
         <p className="site-summary">{result.summary}</p>
         <figure className="verdict" style={{ margin: 0 }}>
           <div className="verdict-head">
             <span className="label">[ Recommended build ]</span>
             <span className="label">
-              {result.source === "claude" ? "Claude" : "Agent² / analysis"}
+              {result.source === "ai" ? "Live signals + AI" : "Live signals"}
             </span>
           </div>
           <div className="verdict-body">
@@ -262,7 +297,10 @@ function SitePanel({
           className="other-input"
           type="url"
           value={url}
-          placeholder="https://your-store.com"
+          placeholder="your-store.com"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           onChange={(e) => onUrl(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && url.trim()) onAnalyze();
@@ -745,8 +783,12 @@ export default function Home() {
         body: JSON.stringify({ url: siteUrl.trim(), concerns: siteConcerns }),
       });
       const data = await res.json();
-      if (!res.ok) setSiteError(data.error ?? "Couldn't analyze that site.");
-      else setSiteResult(data as SiteAnalysis);
+      if (!res.ok) {
+        setSiteError(data.error ?? "Couldn't analyze that site.");
+      } else {
+        setSiteResult(data as SiteAnalysis);
+        setSiteUrl((data as SiteAnalysis).store.url);
+      }
     } catch {
       setSiteError("Couldn't reach the analyzer. Try again, or describe it manually.");
     } finally {
